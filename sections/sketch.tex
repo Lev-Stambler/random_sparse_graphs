@@ -18,13 +18,77 @@
 \newcommand{\Enc}{\texttt{Enc}}
 \newcommand{\Dec}{\texttt{Dec}}
 \newcommand{\Hyb}{\texttt{Hyb}}
+\newcommand{\adversB}{\mathcal{B}}
 
 \newcommand{\minEntropy}{I_\texttt{min}}
 %%%%%%%%%%%% End Commands %%%%%%%%%%%%
 
 \subsection{Graph Label Randomization}
 Say that we have a sparse graph $\graph = (\verts, \edges)$ such that $|\verts| = n$
-and $\forall v \in \verts, \deg(v) \leq d$.
+and $\forall v \in \verts, \deg(v) = d$. (TODO: padding).
+
+Then, we want to create a pseudo-randomized label mapping of the graph, $\embedFn: \set{0, 1}^\lambda \times \verts \rightarrow \{0, 1\}^{c \cdot \lambda}$
+such that $\embedFn$ is deterministic and pseudo-random. In particular, we require that for an adversary 
+that does not know a path from $v, u \in \set{v_1, ..., v_p}$ where $v \neq u$, then for $K_1, K_2 \in \set{0, 1}^\lambda$,
+\begin{align}
+	&\Pr\left[\advers(\embedFn(K_1, v_1), \dots \embedFn(K_1, v_{p}), v_1, \dots, v_p, \circNeigb) = 1\right]
+	\label{eq:gameGRO}
+	\\
+	&- \Pr\left[\advers(\embedFn(K_2, v_1), \dots \embedFn(K_2, v_{p}), v_1, \dots, v_p, \circNeigb) = 1\right]
+		\leq \negl(\lambda) \notag
+\end{align}
+where $\circNeigb$ is the neighbor function for the embedded space: i.e.\ $\circNeigb = \embedFn \circ \Gamma \circ \embedFn^{-1}$.
+
+
+\begin{algorithm}[H]
+	\caption{
+		The circuit for the neighbor function, $\circNeigb$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\inner_i$}{$\Dec(\phi(v)) = v, K$}
+			\State $u_1, \dots, u_d = \Gamma(v)$
+			\State $u = u_i$
+			\State $r = \PRF(K, u)$
+			\State \Return $\Enc(\MPK, (u, K))$ where we encrypt with randomness from $r$.
+			% \State $\Dec(\SK_{\circNeigb'}, \phi(v))$
+		\EndFunction
+		\Function{$\circNeigb$}{$\phi(v)$}
+		 	\For{$i \in [d]$}
+				\State $u_i = \Dec(\SK_{\texttt{inner}_i}, \phi(v))$
+			\EndFor
+			\State \Return $(u_1, \dots, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighb}
+\end{algorithm}
+
+\begin{claim} 
+	\label{claim:sec}
+	\cref{eq:gameGRO} holds for any PPT adversary, $\adversB$ when $\circNeigb$ is implemented as in \cref{alg:neighb}.
+\end{claim}
+\begin{proof}[Proof of \cref{claim:sec}]
+We proceed via a hybrid argument and then show that if there exists an adversary $\adversB$ that can beak \cref{eq:gameGRO},
+then we can build an adversary $\advers$ which can distinguish between the hybrids.
+
+\begin{itemize}
+	\item $\Hyb_0$: As the LHS of the FE game
+	\item $\Hyb_1$: As the RHS of the FE game
+	\item $\Hyb_2$: As the above but we replace $\Pi_m = \big((\inner_1, \inner_1(v, K'), \dots, (\inner_d, \inner_d(v, K')\big)$
+	for all $v \in \set{v_1, ..., v_p}$
+	% Secure b/c advers does not know path from u to v for any of these. Thus, C_Gamma(u) is independent of C_Gamma(v). So, all the different distributions are independent to the adversary
+	% eeesh idk
+\end{itemize}
+
+Now, note that if $\adversB$ can distinguish between \cref{eq:gameGRO}, then we can build adversary $\advers$ to distinguish between $\Hyb_0$ and $\Hyb_2$ by invoking $\adversB$ to distinguish
+% Ohhhh wait, because C, C(m) ~ C(m'), the simulator generating ct_m, ct_m' are indistirnguishabl from each other
+% Thus, Enc(ct_m) and Enc(ct_m') are indistinguishable from each other
+\end{proof}
+
+
+
+
+%%%%%%%%%% THE REST IS WRONG
+\section{Wrong below}
 
 We want to ``randomize'' the labels of the graph via a poly-time embedding function $\phi$
 such that the embeddings are indistinguishable from a truly random embedding, $\idealEmbedFn$.
@@ -60,7 +124,7 @@ This brings us to our notion of graph-label randomization obfuscation (GRO).
 	$w_1, \dots, w_p, v_1, \dots, v_p \in \verts$, and any polynomial time adversary, $\advers$, such that there does not exist a knowledge extractor from the adversary which,
 	can extract a path from $u$ to $v$ for $u, v \in w_1, \dots, w_p, v_1, \dots v_p$,
 	\begin{equation}
-	\label{eq:gameGRO}
+	% \label{eq:gameGRO}
 	\big|
 		\Pr\left[\advers(\phi(v_1), \dots \phi(v_{p}), \circNeigb) = 1\right]
 		 - 
@@ -111,23 +175,31 @@ these two hybrids are indistinguishable.
 Then,
 \begin{itemize}
 	\item $\Hyb_0$ is indistinguishable from $\Hyb_1$ by \cite{garg2022dynamic}.
+	% Okay, we cannot do this...
+	% need to justify... otherwise, we get ouput of bot which is not useful
+	% TODO: specify otherwise bot output
 	\item $\Hyb_2$: As $\Hyb_1$ except that we fix the message, $m$, outputted by $\advers$ to be % TODO: can we do this?
 		$(r, v \oplus \PRF(K_1, r), K_1, K_2)$ where $r = \PRF(K_2, v)$ and $v \in \verts$.
+	% TODO: we have to program things a bit diff
 	\item $\Hyb_3$: As the above but we replace $\Pi_m = \big((\inner_1, \inner_1(m), \dots, (\inner_d, \inner_d(m)\big)$
-	with $\inner_i, \inner'_i(m)$ where $\inner'_i$ is the same as $\inner_i$ except that we replace the PRG and RPF randomness with fixed randomness
-	for $m$. I.e.\ we replace:
-	\begin{itemize}
-		\item $r = \PRF(K_2, v)$ with randomness fixed for $m$
-		\item the PRG expansion of $r$ in $\Enc$ with fixed randomness
-		\item the PRF evaluation with key $K_1$ with fixed randomness
-	\end{itemize}
+	with $\inner_i, \inner'_i(m)$ where $\inner'_i$ is the same as $\inner_i$ except that we replace $m$ with MESSAGE TODO $m'$ which encodes a different vertex such that the adversary does not know a path from $m$ to $m'$.
+
+	% Ind proof
+		% 1) Replace output of PRG / PRFz
+
+	% the PRG and RPF randomness with fixed randomness
+	% for $m$. I.e.\ we replace:
+	% \begin{itemize}
+	% 	\item $r = \PRF(K_2, v)$ with randomness fixed for $m$
+	% 	\item the PRG expansion of $r$ in $\Enc$ with fixed randomness
+	% 	\item the PRF evaluation with key $K_1$ with fixed randomness
+	% \end{itemize}
 \end{itemize}
 % TODO: PROOF!
 
 Now, we show that if one can distinguish between the security game outlined in \cref{eq:gameGRO}, then one can distinguish
 between $\Hyb_0$ and $\Hyb_3$.
 
-\newcommand{\adversB}{\mathcal{B}}
 \begin{lemma}
 	Assume that adversary $\adversB$ can distinguish between the game outline in \cref{eq:gameGRO} for any fixed sequence of vertices $v_1, \dots, v_p$.
 	Then, we build an adversary

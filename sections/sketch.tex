@@ -2,14 +2,22 @@
 %%%%%%%%%%%% Commands %%%%%%%%%%%%
 \newcommand{\graph}{\mathcal{G}}
 \newcommand{\verts}{V}
+\newcommand{\inner}{\texttt{inner}}
 \newcommand{\edges}{E}
 \newcommand{\maxDeg}{d}
 \newcommand{\nVerts}{n}
 \newcommand{\embedFn}{\phi}
 \newcommand{\idealEmbedFn}{\Phi}
 \newcommand{\circNeigb}{C_\Gamma}
+\newcommand{\MPK}{\text{MPK}}
+\newcommand{\MSK}{\text{MSK}}
+\newcommand{\SK}{\text{SK}}
 
 \newcommand{\advers}{\mathcal{A}}
+\newcommand{\PRF}{\texttt{PRF}}
+\newcommand{\Enc}{\texttt{Enc}}
+\newcommand{\Dec}{\texttt{Dec}}
+\newcommand{\Hyb}{\texttt{Hyb}}
 
 \newcommand{\minEntropy}{I_\texttt{min}}
 %%%%%%%%%%%% End Commands %%%%%%%%%%%%
@@ -48,15 +56,167 @@ which takes in the vertex label and outputs a pseudo-random string of length $c 
 This brings us to our notion of graph-label randomization obfuscation (GRO).
 
 \begin{definition}[Graph-label randomization obfuscation (GRO, pronounced grow)]
-	Given a circuit $\circNeigb$ realizing $\phi \circ \Gamma \circ \phi^{-1}: \set{0, 1}^{c \cdot \lambda} \rightarrow \set{0, 1}^{c \cdot d \cdot \lambda}$ (the neighbor function for the embedded space)
-	and any polynomial time adversary,
+	Given a circuit $\circNeigb$ realizing $\phi \circ \Gamma \circ \phi^{-1}: \set{0, 1}^{c \cdot \lambda} \rightarrow \set{0, 1}^{c \cdot d \cdot \lambda}$ (the neighbor function for the embedded space),
+	$w_1, \dots, w_p, v_1, \dots, v_p \in \verts$, and any polynomial time adversary, $\advers$, such that there does not exist a knowledge extractor from the adversary which,
+	can extract a path from $u$ to $v$ for $u, v \in w_1, \dots, w_p, v_1, \dots v_p$,
 	\begin{equation}
+	\label{eq:gameGRO}
 	\big|
-		\Pr\left[\advers(\phi(v_1), \dots \phi(v_{i}), \circNeigb) = 1\right]
+		\Pr\left[\advers(\phi(v_1), \dots \phi(v_{p}), \circNeigb) = 1\right]
 		 - 
-		\Pr\left[\advers(\idealEmbedFn(v_1), \dots \idealEmbedFn(v_{i}), \circNeigb) = 1\right]
+		\Pr\left[\advers(\embedFn(w_1), \dots \embedFn(w_{p}), \circNeigb) = 1\right]
+		% \Pr\left[\advers(\idealEmbedFn(v_1), \dots \idealEmbedFn(v_{i}), \circNeigb) = 1\right]
 	\big|
-		\leq \negl(\lambda)
+		\leq \negl(\lambda).
 	\end{equation}
 \end{definition}
 
+\subsubsection*{Pseudo Random Construction}
+We are now going to proceed to give a pseudo random construction for GRO using simulation secure bounded functional encryption in the CRS model.
+We will adopt the notation from \cite{ananth2019optimal}.
+
+We will define $\phi(v) = \Enc\left(\MPK, (r, \texttt{pad}(v) \oplus \PRF(K_1, r), K_1, K_2)\right)$ where $K_1$ is a random key for the PRF with output $2 \lambda$ bits
+and the randomness used in $\Enc$ is fixed via a $PRG$ expansion of $r = \PRF(K_2, v)$.
+
+\begin{algorithm}[H]
+	\caption{
+		The circuit for the neighbor function, $\circNeigb$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\inner_i$}{$\Dec(\phi(v)) = r, \texttt{pad}(v) \oplus \PRF(K_1, r), K_1, K_2$}
+			\State $r' = \PRF(K_1, r)$
+			\State $v = r' \oplus \texttt{pad}(v) \oplus \PRF(K_1, r)$
+			\State $u_1, \dots, u_d = \Gamma(v)$
+			\State $u = u_i$
+			\State $r = \PRF(K_2, u)$
+			\State \Return $\Enc(\MPK, (r, \texttt{pad}(u) \oplus \PRF(K_1, r), K_1, K_2))$ where we encrypt with randomness from a PRG expansion of $r$.
+			% \State $\Dec(\SK_{\circNeigb'}, \phi(v))$
+		\EndFunction
+		\Function{$\circNeigb$}{$\phi(v)$}
+		 	\For{$i \in [d]$}
+				\State $u_i = \Dec(\SK_{\texttt{inner}_i}, \phi(v))$
+			\EndFor
+			\State \Return $(u_1, \dots, u_d)$
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
+\subsection{Indistinguishably Proof}
+% TODO: expand
+Let $\Hyb_0$ be the LHS distribution in the static-bounded-collusion simulation security game in \cite{garg2022dynamic}.
+
+Then, we have $\Hyb_1$ be the RHS distribution in the above. By \cite{garg2022dynamic} (TODO: cite more), we have that
+these two hybrids are indistinguishable.
+
+Then,
+\begin{itemize}
+	\item $\Hyb_0$ is indistinguishable from $\Hyb_1$ by \cite{garg2022dynamic}.
+	\item $\Hyb_2$: As $\Hyb_1$ except that we fix the message, $m$, outputted by $\advers$ to be % TODO: can we do this?
+		$(r, v \oplus \PRF(K_1, r), K_1, K_2)$ where $r = \PRF(K_2, v)$ and $v \in \verts$.
+	\item $\Hyb_3$: As the above but we replace $\Pi_m = \big((\inner_1, \inner_1(m), \dots, (\inner_d, \inner_d(m)\big)$
+	with $\inner_i, \inner'_i(m)$ where $\inner'_i$ is the same as $\inner_i$ except that we replace the PRG and RPF randomness with fixed randomness
+	for $m$. I.e.\ we replace:
+	\begin{itemize}
+		\item $r = \PRF(K_2, v)$ with randomness fixed for $m$
+		\item the PRG expansion of $r$ in $\Enc$ with fixed randomness
+		\item the PRF evaluation with key $K_1$ with fixed randomness
+	\end{itemize}
+\end{itemize}
+% TODO: PROOF!
+
+Now, we show that if one can distinguish between the security game outlined in \cref{eq:gameGRO}, then one can distinguish
+between $\Hyb_0$ and $\Hyb_3$.
+
+\newcommand{\adversB}{\mathcal{B}}
+\begin{lemma}
+	Assume that adversary $\adversB$ can distinguish between the game outline in \cref{eq:gameGRO} for any fixed sequence of vertices $v_1, \dots, v_p$.
+	Then, we build an adversary
+	$\advers$ which can distinguish between $\Hyb_0$ and $\Hyb_3$ for $Q = d$ and $f_i = \inner_i$.
+	\begin{proof}
+		Define $\idealEmbedFn : \verts \rightarrow c \cdot \lambda$ as $\idealEmbedFn(v) = \Enc(\MPK, m)$ 
+		where $m = (r_{v, 1}, v \oplus r_{v, 2}, r_3, r_4)$
+		$\Enc$ is encrypted with randomness $r_{v, 5}$ and $r_{v, 1}, r_{v, 2}, r_{v, 5} \leftarrow U$ and are fixed for $v$
+		and $r_3, r_4 \leftarrow U$ are fixed for a graph $\graph$.
+
+		Then, we have that $\minEntropy(m \mid V = v) \geq 2 \cdot \lambda$. We can then note that $\minEntropy(\Enc(\MPK, m) \mid V = v) \geq \minEntropy(m \mid V = v)$
+		as $\Enc(\MPK, \cdot)$ is injective on the message space.
+		
+		We can then note that $\inner_i'$ is realization
+		of $(\idealEmbedFn \circ \Gamma \circ \idealEmbedFn^{-1})_i$ and that $\Pi_m$ in $\Hyb_3$ 
+		is equivalent to $\big((\inner_1, (\idealEmbedFn \circ \Gamma \circ \idealEmbedFn^{-1})_1), \dots, (\inner_d, (\idealEmbedFn \circ \Gamma \circ \idealEmbedFn^{-1})_d)\big)$.
+
+		Now, let $u_\ell = (\Gamma(v_\ell))_1$ for $\ell \in [p]$. Note that as we are only considering non-directed graphs,
+		$v_\ell \in \Gamma(u_\ell)$.
+		WLOG, assume that $v_\ell = \Gamma(u_\ell)_1$.
+		Now, we can then see that if $\adversB$ can distinguish between \cref{eq:gameGRO}, then $\adversB$ can distinguish between
+		$(\embedFn(v_1), \dots, \embedFn(v_\ell))$ and $(\idealEmbedFn(v_1), \dots, \idealEmbedFn(v_\ell))$.
+		Then, we have that $\adversB$ can distinguish between $(\inner_1 = \phi \circ \Gamma \circ \phi^{-1}, \embedFn(v_\ell))$ and $(\inner_1, \idealEmbedFn(v_\ell))$.
+		% For a fixed $v$, let $u_1, \dots, u_d = \Gamma(d)$. We can then see that if $\adversB$ can distinguish \cref{eq:gameGRO},
+		% then $\adversB$ can distinguish between $\idealEmbedFn(v)$ and $\embedFn(v)$ given $\circNeigb$, then it can distinguish between
+		% $(\inner_i = (\embedFn \circ \Gamma \circ \embedFn^{-1}), \embedFn(u_i))$ and $(\inner_i, \idealEmbedFn(u_i))$.
+		We can then simply build $\advers$ to distinguish between $\Hyb_0$ and $\Hyb_3$ by invoking $\adversB$ to distinguish
+		$\big(\embedFn(u_1), \circNeigb = (\inner_1, \dots, \inner_d)\big)$ and $\big(\idealEmbedFn(u_1)\big)$.
+		We thus have that $\advers$ can distinguish between $\Hyb_0$ and $\Hyb_3$.
+		% But, if $\adversB$ could distinguish between $\idealEmbedFn(v)$ and $\embedFn(v)$ given $\circNeigb$, then it can distinguish between $\Hyb_0$ and $\Hyb_3$.
+	\end{proof}
+\end{lemma}
+% TODO: I think that the above may be a lil wrong
+% We want to say assume that \adversB can distinguish between $v_1, ..., v_p$ for some fixed $v$
+% Maybe you can say something like you use C_\Gamma(v_1) to get u_1, ..., u_d and then you use
+% u_i as the message so that $v_1$ is in the neighborhood again.
+% You can then say that if $\adversB$ knows $v_1$ then they now which neighbor to look at
+% Then, if you can distinguish between any of these distribs, you can distinguish between
+% the two hybrids.
+% Then, we want to use **that** to break the game...
+
+
+
+% https://eprint.iacr.org/2021/847.pdf
+% TODO: use this paper...
+
+
+\section{Hardness of ``Guessing'' Labels}
+In this section we aim to show how we show that the labels in a GRO graph equipped with a neighbor function, $\circNeigb$,
+are ``hard'' to guess unless the label is the output of the neighbor function.
+
+
+\newcommand{\extract}{\texttt{Extract}}
+\begin{claim}
+	For any ppt adversary $\advers$, there exists a ppt extractor $\extract$ such that if $\advers$ knows $\embedFn(v)$ where $v \neq v_\ell$ for $\ell \in [p]$, then
+	$\extract(\advers, \embedFn(v_1), \dots, \embedFn(v_p), v_1, \dots, v_p, v) = u_1, u_2, \dots, u_k$ where $u_1 = v_\ell$ and $u_k = v$  and $u_1, u_2, \dots u_k$ is a path from $v_\ell$ to $v$ where $k \in \poly(\lambda)$.
+\end{claim}
+\begin{proof}
+
+First, note that if an adversary does not know of any labels in the graph to begin with, then
+they have negligible success probability of guessing a label as the labels are indistinguishable from a sample drawn from a high entropy distribution.
+So, we will assume that the adversary knows of some labels in the graph, $\embedFn(v_1), \dots \embedFn(v_p)$.
+
+Now, we can simply assert that if the adversary does not know a path from $v_\ell$ to $v$ for some $\ell \in [p]$ and $v \in \verts$, then
+the adversary cannot guess $\embedFn(v)$ as each labeling $\embedFn(v)$ is independent from $\embedFn(u)$ for all $u \in \verts$ and $v \neq u$. And, as $\embedFn(v) \approx \idealEmbedFn(v)$,
+the probability of guessing $\embedFn(v)$ is negligible as $\idealEmbedFn$ is drawn from a high min-entropy distribution.
+
+% TODO: Indeed we can show that if they do not know a path, then the game indisting is independent between v and v_1, ..., v_p. So, even if advers
+% is told which game is which, they cannot guess v as the game is independent of v.
+\end{proof}
+% Now, we will show that there exists a knowledge extractor, $\extract$, such that if $\advers$ knows $\embedFn(v)$ where $v \neq v_\ell$ for $\ell \in [p]$, then
+% we can construct an extractor $\extract$ which can find a path from $v$ to $v_\ell$ in the graph $\graph$ for some $\ell \in [p]$.
+
+% TODO: the above ain't gonna work...
+
+% \begin{equation}
+% 	\Pr\left[\extract(\circNeigb, \phi(v)) = v\right] \geq 1 - \negl(\lambda).
+% \end{equation}
+% Knowledge of x implies y
+
+% Knowledge of label implies knowing a path from a pre-known label to the label
+
+\section{Building Witness Encryption}
+
+\section{Open questions}
+Can we de-randomize specific labels (like the outcome of a branching program) and create obfuscation
+via giving over evaluation points on the graph along with the circuit?
+
+
+Can we build something like NISC or private function evaluation??
+
+Can the output with iO to decrypt some things of interest?

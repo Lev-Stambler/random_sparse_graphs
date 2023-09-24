@@ -1,0 +1,62 @@
+\section{A sketch for the boys}
+%%%%%%%%%%%% Commands %%%%%%%%%%%%
+\newcommand{\graph}{\mathcal{G}}
+\newcommand{\verts}{V}
+\newcommand{\edges}{E}
+\newcommand{\maxDeg}{d}
+\newcommand{\nVerts}{n}
+\newcommand{\embedFn}{\phi}
+\newcommand{\idealEmbedFn}{\Phi}
+\newcommand{\circNeigb}{C_\Gamma}
+
+\newcommand{\advers}{\mathcal{A}}
+
+\newcommand{\minEntropy}{I_\texttt{min}}
+%%%%%%%%%%%% End Commands %%%%%%%%%%%%
+
+\subsection{Graph Label Randomization}
+Say that we have a sparse graph $\graph = (\verts, \edges)$ such that $|\verts| = n$
+and $\forall v \in \verts, \deg(v) \leq d$.
+
+We want to ``randomize'' the labels of the graph via a poly-time embedding function $\phi$
+such that the embeddings are indistinguishable from a truly random embedding, $\idealEmbedFn$.
+
+We model $\idealEmbedFn$ as function from $\verts$ to $\{0, 1\}^{c \cdot \lambda}$ for some small constant $c$
+such that 
+\begin{equation*}
+	\minEntropy(\phi(V) \mid V = v) \geq 2 \cdot \lambda.
+\end{equation*}
+Indeed, we do not require that the labels are uniformly random, but rather that each label is ``random enough'',
+containing at least $2 \lambda$ bits of min-entropy.
+
+
+We can now propose a game to characterize the pseudo-random embedding $\phi$.
+For any PPT adversary, $\advers$,
+\begin{equation}
+	\big|
+		\Pr\left[\advers(\phi(v_1), \dots \phi(v_{i})) = 1\right]
+		 - 
+		\Pr\left[\advers(\idealEmbedFn(v_1), \dots \idealEmbedFn(v_{i})) = 1\right]
+	\big|
+		\leq \negl(\lambda)
+\end{equation}
+for some $i \in \poly(\lambda)$.
+
+The above game may prove to be uninteresting as we can simply describe $\phi$ to be a PRF 
+which takes in the vertex label and outputs a pseudo-random string of length $c \cdot \lambda$.
+
+This brings us to our notion of graph-label randomization obfuscation (GRO).
+
+\begin{definition}[Graph-label randomization obfuscation (GRO, pronounced grow)]
+	Given a circuit $\circNeigb$ realizing $\phi \circ \Gamma \circ \phi^{-1}: \set{0, 1}^{c \cdot \lambda} \rightarrow \set{0, 1}^{c \cdot d \cdot \lambda}$ (the neighbor function for the embedded space)
+	and any polynomial time adversary,
+	\begin{equation}
+	\big|
+		\Pr\left[\advers(\phi(v_1), \dots \phi(v_{i}), \circNeigb) = 1\right]
+		 - 
+		\Pr\left[\advers(\idealEmbedFn(v_1), \dots \idealEmbedFn(v_{i}), \circNeigb) = 1\right]
+	\big|
+		\leq \negl(\lambda)
+	\end{equation}
+\end{definition}
+

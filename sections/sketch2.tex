@@ -1,0 +1,140 @@
+\section{A sketch for the boys}
+%%%%%%%%%%%% Commands %%%%%%%%%%%%
+\newcommand{\graph}{\mathcal{G}}
+\newcommand{\verts}{V}
+\newcommand{\inner}{\texttt{inner}}
+\newcommand{\edges}{E}
+\newcommand{\maxDeg}{d}
+\newcommand{\nVerts}{n}
+\newcommand{\embedFn}{\phi}
+\newcommand{\idealEmbedFn}{\Phi}
+\newcommand{\circNeigb}{C_\Gamma}
+\newcommand{\PRF}{\texttt{PRF}}
+\newcommand{\Hyb}{\texttt{Hyb}}
+\newcommand{\adversB}{\mathcal{B}}
+
+\newcommand{\minEntropy}{I_\texttt{min}}
+%%%%%%%%%%%% End Commands %%%%%%%%%%%%
+
+\subsection{Graph Label Randomization}
+Say that we have a sparse graph $\graph = (\verts, \edges)$ such that $|\verts| = n$
+and $\forall v \in \verts, \deg(v) = d$. (TODO: padding).
+
+Then, we want to create a pseudo-randomized label mapping of the graph, $\embedFn: \set{0, 1}^\lambda \times \verts \rightarrow \{0, 1\}^{c \cdot \lambda}$
+such that $\embedFn$ is deterministic and pseudo-random. In particular, we require that for an adversary 
+that does not know a path from $v$ to $u \in \set{v_1, ..., v_p}$ or $u$ to $v$ where $v \neq u$, then for $K, K' \in \set{0, 1}^\lambda$,
+\begin{align}
+	&\Pr\left[\advers(\embedFn(K, v), \embedFn(K, v_1), \dots \embedFn(K, v_{p}), v_1, \dots, v_p, \circNeigb) = 1\right]
+	\label{eq:gameGRO}
+	\\
+	&- \Pr\left[\advers(\embedFn(K', v), \embedFn(K, v_1), \dots \embedFn(K, v_{p}), v_1, \dots, v_p, \circNeigb) = 1\right]
+		\leq \negl(\lambda) \notag
+\end{align}
+where $\circNeigb$ is the neighbor function for the embedded space: i.e.\ $\circNeigb = \embedFn \circ \Gamma \circ \embedFn^{-1}$.
+
+\subsection{The Construction}
+\begin{algorithm}[H]
+	\caption{
+		The circuit for the neighbor function, $\circNeigb$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\inner_i$}{$\Dec(\phi(v)) = v, K$}
+			\State $u_1, \dots, u_d = \Gamma(v)$
+			\State $u = u_i$
+			\State $r = \PRF(K, u)$
+			\State \Return $\FEEnc(\MPK, (u, K))$ where we encrypt with randomness from $r$.
+			% \State $\Dec(\SK_{\circNeigb'}, \phi(v))$
+		\EndFunction
+		\Function{$\circNeigb$}{$\phi(v)$}
+		 	\For{$i \in [d]$}
+				\State $u_i = \FEDec(\SK_{\texttt{inner}_i}, \phi(v))$
+			\EndFor
+			\State \Return $(u_1, \dots, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighb}
+\end{algorithm}
+
+\begin{claim} 
+	\label{claim:sec}
+	\cref{eq:gameGRO} holds for a given vertex $v$ for any PPT adversary, $\adversB$ when $\circNeigb$ is implemented as in \cref{alg:neighb}.
+\end{claim}
+In order to prove the above, we must show that an adversary which does not know a path from $v$ to $v_1, \dots v_p$
+essentially ``learns'' nothing of $K$.
+
+\begin{lemma}[Does not learn $K$]
+	\label{lemma:hardLearnK}
+	For any PPT adversary $\advers$
+	\begin{align}
+		\big| &\Pr[\advers(\phi(K, v_1), \dots, \phi(K, v_p), v_1, \dots, v_p, \circNeigb) = 0]
+		\label{eq:Kindist}
+		\\
+		& - \Pr[\advers(\phi(K', v_1), \dots, \phi(K', v_p), v_1, \dots, v_p, \circNeigb) = 0]\big|
+			\leq \negl(\lambda). \notag
+	\end{align}
+	\begin{proof}
+		We proceed via showing that for any calls to $\circNeigb$, the output is computationally indistinguishable from 
+		an output where the adversary is given $\phi(K', v_1), \dots, \phi(K', v_p)$ for $K' \in \set{0, 1}^\lambda$.
+		
+		We proceed via a hybrid argument.
+		\begin{itemize}
+			\item $\Hyb_0$: The adversary plays the game outlined in \cref{alg:FEExprReal} where the circuits are $\inner_1, \dots, \inner_d$
+			\item $\Hyb_2$: As the above except that we replace the real protocol with the simulated one, \cref{alg:FEExprSim}
+			\item $\Hyb_3$: As the above except that we replace $\inner_i$ with $\inner_i'$ where $\inner_i'$ invokes the FE simulator, $\Sim$ when generating its output.
+			Note that $\Sim$ must know the access pattern of $\advers$ to $\inner_i$ in order to simulate the output of $\inner_i$.
+			So, we replace $\inner_i'$ working backwards from the last call to the simulator to the first.
+			As the simulator is stateful, we can see that the simulator knows the access pattern.
+			\item $\Hyb_4$: As the above except that we replace $K$ with $K'$.
+			We can see that this is valid as both inputs to $\inner'_i$ and outputs of $\inner'_i$ are independent of $K$.
+		\end{itemize}
+	From the above hybrid, we can see that if $\advers$ can distinguish \cref{eq:Kindist}, then 
+	$\advers$ can distinguish $\Hyb_4$ and $\Hyb_3$.
+	\end{proof}
+\end{lemma}
+
+Now we can prove \cref{claim:sec},
+\begin{proof}[Proof of \cref{claim:sec}]
+First note that the adversary cannot learn $\phi(K, v)$ via calling $\FEEnc(K, v)$ as
+that would imply breaking \cref{lemma:hardLearnK}.
+
+Thus, $\adversB$ can only learn $\phi(K, v)$ via calling $\circNeigb$ or manipulating given cipher texts.
+We now proceed to show that this is computationally infeasible via a hybrid algorithm.
+
+\begin{itemize}
+	\item $\Hyb_0$: The adversary plays the game outlined in \cref{alg:FEExprReal} where the circuits are $\inner_1, \dots, \inner_d$
+	and $\advers$ is given $\phi(v_1) = \FEEnc(v_1, K), \dots, \phi(v_p) = \FEEnc(v_p, K)$ where encryption randomness is derived from $\PRF(K, v_1), \dots, \PRF(K, v_p)$.
+	\item $\Hyb_1$: As the above except that we replace encryption randomness with true random strings fixed for each $v_\ell$ where $\ell \in [p]$.
+	\item $\Hyb_2$: As the above except that we replace $\inner_i$ with $\inner_i'$ such that if $\inner_i(\phi(K, u)) = \phi(K, v)$,
+	$\inner_i'(\phi(K, u)) = \bot$.
+	Note that $\advers$ cannot distinguish between $\inner_i$ and $\inner_i'$ because $\advers$ does not know the path from $v_\ell$ to $v$
+	and can thus not find $\phi(K, u)$ from repeated queries of $\inner_i$.
+	\item $\Hyb_3$: As the above except that we replace \cref{alg:FEExprReal} with \cref{alg:FEExprSim}, the simulated version.
+	Now, note that $\advers$ cannot distinguish between simulated $\phi(K, v_\ell)$ which we will call $\phi(v_\ell)'$ and the given $\phi(v_\ell)$.
+	% Indeed, we can do this even though $\advers$ is given $\phi(v_1), \dots, \phi(v_p)$ because $\advers$ does not know 
+	% a sequence of calls to $\Gamma$ such that $\Gamma \circ \Gamma \circ \dots \circ \Gamma(v) = u$ for any $u \in \set{v_1, ..., v_p}$ or vice versa.
+	% Thus, $\phi(v_\ell)$ is computationally independent of $\phi(v)$.
+	% \item $\Hyb_2$: As the above but we replace 
+	% Secure b/c advers does not know path from u to v for any of these. Thus, C_Gamma(u) is independent of C_Gamma(v). So, all the different distributions are independent to the adversary
+	% eeesh idk
+\end{itemize}
+
+Indeed the simulated labels, $\phi'(K, v_\ell)$ are simulated independently of $\phi(K, v)$ as $\inner_i'(K, u) \neq \phi(K, v)$
+with high probability for any $u \in \verts$.
+Thus, 
+\begin{equation*}
+	\big|
+		\Pr[\adversB(v, \circNeigb) = \phi(K, v)] - \Pr[\adversB\big(v, \phi(K, v_1), \dots, \phi(K, v_p), v_1, \dots, v_p, \circNeigb\big) = \phi(K, v)]
+	\big| \leq \negl(\lambda)
+\end{equation*}
+And, by \cref{lemma:hardLearnK}, we have that
+\begin{equation*}
+	\Pr[\adversB(v, \circNeigb) = \phi(K, v)] \leq \negl(\lambda)
+\end{equation*}
+thus concluding the proof.
+% TODO: show the high probability part!!
+\end{proof}
+
+
+
+% https://eprint.iacr.org/2016/361.pdf
+% Maybe this defn??

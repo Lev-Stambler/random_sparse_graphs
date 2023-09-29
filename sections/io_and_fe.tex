@@ -1,0 +1,50 @@
+\newcommand{\ct}{\texttt{ct}}
+\section{iO Based Construction}
+\subsection{The Construction}
+\begin{algorithm}[H]
+	\caption{
+		The circuit for the neighbor function, $\circNeigb$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\Gamma$}{$\ct_1, \ct_2, \ct_3, i$} %\Comment{Where $r \randomGet \binSet^\lambda$}
+			\State \textbf{Constants:} $K_1, K_2, K_3$
+		 	% \State $t = \PRG_1(r)$
+			\State $v = \ct \oplus \PRF(K_1, \ct_1)$
+			\State \If{$\PRF(K_3, \ct_1 \mid v) \neq \ct_3$}
+				\State \Return $\bot$
+			\EndIf
+			\State $u_1, \dots, u_d = \Gamma_\graph(v)$
+			\State $r_i = \PRF_2(K, (r, u_i))$
+			\State $t_i= \PRG(r_i)$
+			\State \Return $(\ct_1 = t_i, \ct_2 = u_i \oplus \PRF(K_1, t_i), \ct_3 = \PRF(K_3, t_i \mid u_i))$
+		\EndFunction
+		\Function{PkEnc}{$v, r$}
+			\State \textbf{Constants:} $K_1, K_3$
+			\State $t = \PRG_1(r)$
+			\State $r' = \PRF(K_1, t)$
+			\State \Return $(\ct_1 = t, \ct_2 = v \oplus r', \ct_3 = \PRF(K_3, \ct_1 | v))$
+			% TODO: constr PRF?
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighb}
+\end{algorithm}
+
+\subsection{Security}
+\begin{itemize}
+	\item $\Hyb_0$: In the first hybrid the following game is played:
+		\begin{enumerate}
+			\item $r* \in \binSet^\lambda$ and $t* = \PRG(r*)$
+			\item $K_1, K_2 \randomGet \binSet^\lambda$ are chosen as a key for a puncturable PRF
+			$K_3$ is chosen as a key for a constraint PRF. % TODO: DEFINE CONSTRAINT!
+			\item An obfuscation of $\Gamma$ is given out.
+			\item $\ct_{v_0} = \text{PkEnc}(v_0, r*)$ is given out.
+			\item The attacker wins if they can output $\PRF(K_3, r | s)$ for any string 
+			$s$ and any $r \in \binSet^{2\lambda}$ where
+			the attacker does not know a path from $v_0$ to $s$ if $s$ is a vertex label.
+		\end{enumerate}
+	\item $\Hyb_1$: As the above except that $t*$ is chosen randomly from $\binSet^{2\lambda}$.
+	We can also then not generate $r*$.
+	\item The same as the above except that we fix the punctured PRF keys
+	\item The sam as the above except that we replace $\PRF$ evals??
+	\item 
+\end{itemize}

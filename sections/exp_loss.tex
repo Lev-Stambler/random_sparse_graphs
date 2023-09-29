@@ -1,0 +1,114 @@
+\section{A sketch for the boys}
+\newcommand{\labelFunc}{\phi}
+\newcommand{\imageFn}{\text{Image}}
+
+\subsection{DAG Randomized Traversal}
+Say that we have a sparse, potentially exponentially sized, graph $\graph = (\verts, \edges)$
+and $\forall v \in \verts, \deg(v) = d$.
+We also require that $\graph$ is equipped with a neighbor function, $\Gamma$, which can be computed in polynomial time.
+% (TODO: padding).
+We define a (pseudo) randomized and keyed labelling function $\phi: \verts \times \binSet^\lambda \rightarrow \binSet^{\poly(\lambda)}$ 
+such that given, $\phi(K, v_0)$ for root $v_0$, an adversary, $\advers$, which does not know a path from $v_0$ to $v$,
+\begin{equation}
+	\label{eq:guessPhi}
+	\Pr[\advers(\circNeigb, v_0, v, \labelFunc(K, v_0)) \in \imageFn(\labelFunc(K, v))] \leq \eps
+\end{equation}
+for some fixed $\eps \leq \negl(\lambda)$ and function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$
+if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $0$ string of length $d |\labelFunc(K, \cdot)|$.
+
+\subsection{Instantiation}
+We define $\labelFunc(K, v)$ to be as follows:
+\begin{enumerate}
+	\item Let $r_1, r_2 \randomGet \binSet^\lambda$ or $r_1, r_2$ is drawn from a pseudorandom distribution. % TODO: hmm
+	\item Return $\FEEnc(\MPK, (K, v, r_2))$ where encryption is done with randomness from $r_1$.
+\end{enumerate}
+
+We can now define, $\circNeigb$.
+\begin{algorithm}[H]
+	\caption{
+		The circuit for the neighbor function, $\circNeigb$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\inner_i$}{$K, v, r$}
+		 	\If{$\Gamma(v) = \emptyset$}
+				\State \Return $0 \in \binSet^*$ %TODO: define star to just be the same length....
+			\EndIf
+			\State $u_1, \dots, u_d = \Gamma(v)$
+			\State $u = u_i$
+			\State $r_1, r_2 = \PRG(r)$
+			\State \Return $\FEEnc(\MPK, (u, K, r_2))$ where we encrypt with randomness from $r_1$.
+		\EndFunction
+		\Function{$\circNeigb$}{$\phi(K, v)$}
+		 	\For{$i \in [d]$}
+				\State $u_i = \Dec(\SK_{\texttt{inner}_i}, \phi(K, v))$
+			\EndFor
+			\State \Return $(u_1, \dots, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighb}
+\end{algorithm}
+
+Before showing that our definition of $\labelFunc$ and $\circNeigb$ satisfy \cref{eq:guessPhi}, we first must show that an adversary cannot find $K$.
+\begin{lemma}
+	\label{lem:findK}
+	Let $\advers$ be a PPT adversary which can find $K$ with probability $N\eps$.
+	Then, there exists a PPT adversary, $\adversB$ which can break the FE scheme with probability $\eps$.	
+	Or, given that the FE scheme is $\eps$ secure, then,
+	\begin{equation*}
+		\Pr[\advers(\Gamma, \circNeigb, v_0, \labelFunc(K, v_0)) = K] \leq N\eps
+	\end{equation*}
+	\begin{proof}
+		We first prove the above but in the case of selective security. I.e.\ the adversary has to fix
+		its query path at the start.
+		We then use standard complexity leveraging techniques to achieve adaptive security.
+
+		We proceed via a series of hybrids. Note that for $N \geq \exp(\lambda)$, we require exponential hardness for the FE scheme.
+		\begin{itemize}
+			\item $\Hyb_0$: In the first hybrid, the following game is played
+				\begin{enumerate}
+					\item $K$ is chosen at random, $\MPK, \SK$ are generated for the functional encryption.
+					\item The challenger generates $\SK_{\inner_i}$ for $i \in [d]$ and gives these keys to $\advers$
+					\item The challenger picks random $r_1, r_2$ and generates $\phi(K, v_0) = \FEEnc(\MPK, (K, v_0, r_2))$ and gives this to $\advers$.
+					\item $\advers$ outputs guess $K'$ and wins if $K = K'$
+				\end{enumerate}
+			\item $\Hyb_1$: We replace $\phi(K, v_0)$ with its FE simulated counterpart
+			\item $\Hyb_2$: When giving $\inner_i(K, v_0, r_2) = \FEEnc(K, u_i, r_2')$ to the simulator and adversary,
+			we replace $r_2'$ with truly random $r_2'^*$ and the encryption to be done with true randomness $r_1^*$.
+			Define $\inner_i^*$ to be $\inner_i$ except that $r_1, r_2$ are chosen at random.
+			\item $\Hyb_3$: Define an ordering for $\graph$, $u_1, \dots, u_g$ where $u_1$ is the root and $g = |\verts|$.
+			Then, starting with $j = g$ and decrementing to $j = 1$, replace $\labelFunc$.
+			Replace $\inner_i$ with $\inner_i^*$, we can use the same argument as above.
+			Now, replace $\inner_i^**$ with $\inner_i^*$ where $\inner_i^**(K, v, r) = \Sim(blah, blah, K, v_i', r_2')$ ~~TODO: fix~~ for $v_i' = \Gamma(v)_i$
+			if $\Gamma(v) \neq \emptyset$ and otherwise with the $0$ string.
+			We can note that as $\graph$ is a DAG, every vertex has a path to a leaf.
+			As a leaf's output on $\inner_i$ is 0, the simulation of a leaf's ciphertext is independent of $K$.
+			Thus, as we work backwords, updating $\inner_i^*$ with $\inner_i^{**}$, we can note that the simulation for the input ciphertext to $\inner_i^{**}$ is independent of $K$.	
+		\end{itemize}
+		Now, if we can guess $K$, then we can check whether or not we are in $\Hyb_0$ or $\Hyb_3$ 
+		via feeding in things from $\Hyb_0$/ $\Hyb_3$ into $\advers$. As $\Hyb_3$ is indep of K, we are negligible in success prob definitionally,
+		if we are in $\Hyb_0$ then we can guess $K$ with non-neg prob. Thus we gucci. We also have to specify hardness distance of like $|\verts|$ and say triangle inequality.
+	\end{proof}
+\end{lemma}
+
+\begin{claim} 
+	\label{claim:sec}
+	\cref{eq:guessPhi} holds for any PPT adversary, $\adversB$ when $\circNeigb$ is implemented as in \cref{alg:neighb}.
+\end{claim}
+\begin{proof}[Proof of \cref{claim:sec}]
+We proceed via a hybrid argument and then show that if there exists an adversary $\adversB$ that can beak \cref{eq:gameGRO},
+then we can build an adversary $\advers$ which can distinguish between the hybrids.
+
+\begin{itemize}
+	\item $\Hyb_0$: As the LHS of the FE game
+	\item $\Hyb_1$: As the RHS of the FE game
+	\item $\Hyb_2$: As the above but we replace $\Pi_m = \big((\inner_1, \inner_1(v, K'), \dots, (\inner_d, \inner_d(v, K')\big)$
+	for all $v \in \set{v_1, ..., v_p}$
+	% Secure b/c advers does not know path from u to v for any of these. Thus, C_Gamma(u) is independent of C_Gamma(v). So, all the different distributions are independent to the adversary
+	% eeesh idk
+\end{itemize}
+
+Now, note that if $\adversB$ can distinguish between \cref{eq:gameGRO}, then we can build adversary $\advers$ to distinguish between $\Hyb_0$ and $\Hyb_2$ by invoking $\adversB$ to distinguish
+% Ohhhh wait, because C, C(m) ~ C(m'), the simulator generating ct_m, ct_m' are indistirnguishabl from each other
+% Thus, Enc(ct_m) and Enc(ct_m') are indistinguishable from each other
+\end{proof}
+

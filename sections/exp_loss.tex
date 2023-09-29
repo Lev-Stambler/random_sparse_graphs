@@ -90,19 +90,56 @@ Before showing that our definition of $\labelFunc$ and $\circNeigb$ satisfy \cre
 	\end{proof}
 \end{lemma}
 
+\begin{lemma}
+	\begin{equation*}
+		\Pr[\advers(\Gamma, v_0, v, \labelFunc(K, v_0)) \in \imageFn(\labelFunc(K, v))] \leq \eps	
+	\end{equation*}
+	\begin{proof}
+		\begin{itemize}
+			\item We think of giving the ``null key" to the adversary. I.e.\ we give a func which always eval to null
+			\item We then replace $\phi$ with its FE simulated counterpart
+			\item We then say that $\labelFunc(K, v_0)^*$ is independent of $\labelFunc(K, v)$
+			b/c non-malleable
+			% TODO: see defn in these lectures https://www.cs.cornell.edu/courses/cs687/2006fa/lectures/lecture16.pdf
+		\end{itemize}
+		Assume that we can break the above hybrid. We then have that either break non-malleableness of you can find K
+	\end{proof}
+\end{lemma}
+
+
 \begin{claim} 
 	\label{claim:sec}
 	\cref{eq:guessPhi} holds for any PPT adversary, $\adversB$ when $\circNeigb$ is implemented as in \cref{alg:neighb}.
 \end{claim}
 \begin{proof}[Proof of \cref{claim:sec}]
-We proceed via a hybrid argument and then show that if there exists an adversary $\adversB$ that can beak \cref{eq:gameGRO},
+We proceed via a hybrid argument and then show that if there exists an adversary $\adversB$ that can beak \cref{eq:guessPhi},
 then we can build an adversary $\advers$ which can distinguish between the hybrids.
 
+
+
+% Assume that there exists a path from v_0 to v. Let all such paths be P.
+% SAY THAT (definitionally) advers never queries a path from v_0 to v
+% Then, we have to prove by induction that we cannot find v
+% If advers does not know the path, then they do not query some subset of path \in P
+% where the section is the path from u to v for some vertex u.
+% Now, we can replace \inner_i(neighb u) with bot because advers (by definition) never queries u.
+% Now, we need to show that finding \phi(K, u) is hard. We can do the simulation replacement as in the lemma
+% But now, we have the "u" is isolated and independent of inner_i. Thus Pr[advers guesses phi(u), \phi(v_0), C_\Gamma] is about Pr[advers guesses phi(u), phi(v_0)] without gamma
+% 
+% Now, we have that advers never sees prior u on path. So, for next u, we can do a similar procedure as the above?
+%
+
 \begin{itemize}
-	\item $\Hyb_0$: As the LHS of the FE game
-	\item $\Hyb_1$: As the RHS of the FE game
-	\item $\Hyb_2$: As the above but we replace $\Pi_m = \big((\inner_1, \inner_1(v, K'), \dots, (\inner_d, \inner_d(v, K')\big)$
-	for all $v \in \set{v_1, ..., v_p}$
+	\item $\Hyb_0$: Guess game. Win if guess
+	\item $\Hyb_1$: As the above but we replace $\phi(K, v_0)$ with its FE simulated counterpart
+	as in the above lemma
+	\item $\Hyb_2$: We replace $\inner_i$ ($\inner_i^*$) to output $\bot$ if it is supposed to output $v$
+	% Oh this may actually not work, we need to say that G^-1 is hard to find...
+	\item $\Hyb_3$: 
+
+	% \item $\Hyb_1$: As the RHS of the FE game
+	% \item $\Hyb_2$: As the above but we replace $\Pi_m = \big((\inner_1, \inner_1(v, K'), \dots, (\inner_d, \inner_d(v, K')\big)$
+	% for all $v \in \set{v_1, ..., v_p}$
 	% Secure b/c advers does not know path from u to v for any of these. Thus, C_Gamma(u) is independent of C_Gamma(v). So, all the different distributions are independent to the adversary
 	% eeesh idk
 \end{itemize}

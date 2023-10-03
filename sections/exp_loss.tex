@@ -36,6 +36,7 @@ We can now define, $\circNeigb$.
 			\State $u_1, \dots, u_d = \Gamma(v)$
 			\State $u = u_i$
 			\State $r_1, r_2 = \PRG(r)$
+			\label{alg:neighb:prg}
 			\State \Return $\FEEnc(\MPK, (u, K, r_2))$ where we encrypt with randomness from $r_1$.
 		\EndFunction
 		\Function{$\circNeigb$}{$\phi(K, v)$}
@@ -62,31 +63,59 @@ Before showing that our definition of $\labelFunc$ and $\circNeigb$ satisfy \cre
 		its query path at the start.
 		We then use standard complexity leveraging techniques to achieve adaptive security.
 
-		We proceed via a series of hybrids. Note that for $N \geq \exp(\lambda)$, we require exponential hardness for the FE scheme.
+		We proceed via a series of hybrids. Note that for $|\verts| \geq \exp(\lambda)$, we require exponential hardness for the FE scheme.
+		As such, let modified security parameter $\lambda' = \lambda + O(\log |\verts|)$.
 		\begin{itemize}
 			\item $\Hyb_0$: In the first hybrid, the following game is played
 				\begin{enumerate}
-					\item $K$ is chosen at random, $\MPK, \SK$ are generated for the functional encryption.
-					\item The challenger generates $\SK_{\inner_i}$ for $i \in [d]$ and gives these keys to $\advers$
-					\item The challenger picks random $r_1, r_2$ and generates $\phi(K, v_0) = \FEEnc(\MPK, (K, v_0, r_2))$ and gives this to $\advers$.
+					\item $K \randomGet \binSet^{\lambda'}$ and $\MPK, \SK \gets \FESetup(1^{\lambda'})$.
+					\item The challenger generates $\SK_{\inner_i} \gets \FEKeygen(\MSK, \inner_i)$ for $i \in [d]$ and gives these keys to $\advers$
+					\item The challenger picks random $r_1, r_2 \randomGet \binSet^{\lambda'}$ and generates $\phi(K, v_0) = \FEEnc(\MPK, (K, v_0, r_2))$ using $r_1$ as the random coins and gives $\phi(K, v_0)$ to $\advers$.
 					\item $\advers$ outputs guess $K'$ and wins if $K = K'$
 				\end{enumerate}
-			\item $\Hyb_1$: We replace $\phi(K, v_0)$ with its FE simulated counterpart
-			\item $\Hyb_2$: When giving $\inner_i(K, v_0, r_2) = \FEEnc(K, u_i, r_2')$ to the simulator and adversary,
-			we replace $r_2'$ with truly random $r_2'^*$ and the encryption to be done with true randomness $r_1^*$.
-			Define $\inner_i^*$ to be $\inner_i$ except that $r_1, r_2$ are chosen at random.
-			\item $\Hyb_3$: Define an ordering for $\graph$, $u_1, \dots, u_g$ where $u_1$ is the root and $g = |\verts|$.
-			Then, starting with $j = g$ and decrementing to $j = 1$, replace $\labelFunc$.
-			Replace $\inner_i$ with $\inner_i^*$, we can use the same argument as above.
-			Now, replace $\inner_i^**$ with $\inner_i^*$ where $\inner_i^**(K, v, r) = \Sim(blah, blah, K, v_i', r_2')$ ~~TODO: fix~~ for $v_i' = \Gamma(v)_i$
-			if $\Gamma(v) \neq \emptyset$ and otherwise with the $0$ string.
-			We can note that as $\graph$ is a DAG, every vertex has a path to a leaf.
-			As a leaf's output on $\inner_i$ is 0, the simulation of a leaf's ciphertext is independent of $K$.
-			Thus, as we work backwords, updating $\inner_i^*$ with $\inner_i^{**}$, we can note that the simulation for the input ciphertext to $\inner_i^{**}$ is independent of $K$.	
+			\item $\Hyb_1$: We replace the \emph{entire graph} with its simulated counterpart.
+			We start with the leaves and then ``work backwards'' doing two steps at a time.
+			Let $U_1, \dots, U_D$ be a partition of $V$ such that for all $u \in U_i$, the minimum distance from $u$ to a the root is $i$.
+			Starting with $j = D$, we do the following
+			\begin{enumerate}
+				\item For vertex $u \in U_j$, we invoke the FE simulator to get
+				\begin{align*}
+						\FECT_{u}' \gets \Sim\big(1^\lambda, &1^{TODO}, \MPK, (\inner_1, \dots, \inner_d), (\SK_{\inner_1}, \dots \SK_{\inner_d}),\\
+							&(\inner'_1(u), \dots, \inner'_d(u))\big)
+				\end{align*}
+				where $\inner'_i$ is the same as $\inner_i$ except that instead of using $r_1$ as randomness for $\FEEnc$, we use $r_1'$ which is true randomness that is fixed for $u$.
+				Moreover, $\inner'_i$ uses true, fixed randomness, $r_2'$, rather than $r_2$.
+				\item For all $w \in \verts$ where $\Gamma(w)_i = u$, we replace $\inner'_i(\phi(K, w))$ with $\FECT_{u}'$.
+				\label{alg:proof:neighb:replace}
+				\item If $j \neq 1$, we go back to step 1 with $j = j - 1$.
+			\end{enumerate}
 		\end{itemize}
-		Now, if we can guess $K$, then we can check whether or not we are in $\Hyb_0$ or $\Hyb_3$ 
-		via feeding in things from $\Hyb_0$/ $\Hyb_3$ into $\advers$. As $\Hyb_3$ is indep of K, we are negligible in success prob definitionally,
-		if we are in $\Hyb_0$ then we can guess $K$ with non-neg prob. Thus we gucci. We also have to specify hardness distance of like $|\verts|$ and say triangle inequality.
+		Assuming $\Hyb_1$ and $\Hyb_0$ computational indistinguishable, if we can guess $K$, then we can build an adversary $\adversB$ which can check whether or not we are in $\Hyb_0$ or $\Hyb_3$. 
+		$\adversB$ simply feeds in the distribution of $\Hyb_0$ into $\advers$ and $\Hyb_1$ into $\advers$.
+		As $\Hyb_1$ is independent of K, we necessarily have that $\Pr[\advers(\Hyb_1) = K] \leq \negl(\lambda)$.
+
+		% TODO: do we need a CRHF of K to check whether or not we are in \Hyb_0 or \Hyb_1?
+		Then, we can note that if $\advers$ can guess $K$ then, $\Pr[\advers(\Hyb_0) = K] > \negl(\lambda)$.
+		Thus, we have that $\Pr[\advers(\Hyb_0) = K] - \Pr[\advers(\Hyb_1) = K] > \negl(\lambda)$ and we can distinguish $\Hyb_0$ and $\Hyb_1$.	\\
+
+
+		Now we just have to show that $\Hyb_0 \compInd \Hyb_1$. First, we can note
+		that $\inner_i(\phi(K, u)) \compInd \inner_i'(\phi(K, u))$ as if these distributions are indistinguishable,
+		we can break the security of the $\PRG$ used in line \ref{alg:neighb:prg} of \cref{alg:neighb}. 
+		% TODO: more concrete?
+		Now, we can note that if $\FECT_u = \phi(K, u)$, we have that $\FECT_u \compInd \FECT_u'$ are indistinguishable
+		if $\inner_i(\FECT_u) \compInd \inner_i(\FECT_u')$ for all $i \in [d]$. We can note that this holds true for
+		$u$ if $u$ is a leaf as $\inner_i(u) = 0$ and thus we can invoke the security of the FE simulator.
+		Then, by step \ref{alg:proof:neighb:replace} in the above hybrid, we inductively create the hybrid
+		such that $\inner_i(\FECT_w) \compInd \inner_i(\FECT_w')$. Thus, as we work backwards from the leaves,
+		we have that $\FECT_u \compInd \FECT_u'$ for all $u \in \verts$. Assuming that the FE scheme is $\eps$ secure
+		and the distance from the distributions of $\inner_i(\FECT_u)$ and $\inner_i'(\FECT_u)$ is at most $\eps$,
+		then by the triangle inequality, we have that the distance between $\Hyb_0$ and $\Hyb_1$ is at most
+		$O(|\verts|)\eps$.
+		More formally, we have that for any PPT adversary, $\adversB$,
+		\begin{equation*}
+			\big| \Pr[\adversB(\Hyb_0) = 1] - \Pr[\adversB(\Hyb_1) = 1] \big| \leq O(|\verts|)\eps.
+		\end{equation*}
 	\end{proof}
 \end{lemma}
 

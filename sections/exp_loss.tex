@@ -216,14 +216,31 @@ for all PPT $\advers$.
 
 \begin{lemma}
 	\label{lem:hybrOneToFour}
-	$\Hyb_0 \compInd \Hyb_2$.	
+	$\Hyb_0 \compInd \Hyb_{2b}$.	
 	\begin{proof}
 		First we show that $\Hyb_0 \compInd \Hyb_1$. Note that if $\advers$ can distinguish
 		between $\Hyb_0$ and $\Hyb_1$ then an adversary can distinguish between an FE scheme and its simulated counterpart
-		where $m$ is fixed to $(K, v_0, r)$.
+		where $m$ is fixed to $(K, v_0, r)$. We can see this as $\Hyb_1$ is  direct simulation of the FE scheme.
 
-		Then, if $\advers$ can distribution $\Hyb_1$ and $\Hyb_2$, 
-		
+		Then, if $\advers$ can distinguish $\Hyb_1$ and $\Hyb_{2a}$, then we can break the security of the $\PRG$ used in line \ref{alg:neighb:prg} of \cref{alg:neighb}.
+		We can create an adversary $\adversB$ which, for some fixed $K$, distinguishes between $\FEEnc(\MPK, (K, u r_2))$ with random coins $r_1$ where $r_1, r_2 = \PRG(r)$
+		and $\FEEnc(\MPK, (K, u, r_1^*))$ encrypted with random coins $r_2^*$ where $r_1^*, r_2^*$ are truly random.
+
+		Then, if $\advers$ can distinguish any transformation from $\Hyb_{2a}$ to $\Hyb_{2b}$, then we can break the security of the FE scheme.
+		We can see this by noting that if we fix $m = (K, w, r)$ for random $r$ and $K$,
+		then $\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$ is distinguishable
+		and $\advers^{\sim_3^{u_m(\cdot)}}(\FECT')$ where $\FECT$ is the real cipher-text and $\FECT'$ is simulated.
+		We can then note that if the above are distinguishable, then
+		$\advers^{\text{KeyGen}(\MSK, \set{\inner_1, \dots \inner_d})}(\FECT)$ 
+		and $\text{KeyGen}(\MSK, \set{\inner_1, \dots \inner_d})$ are distinguishable
+		as $\advers^{\text{KeyGen}(\MSK, \set{\inner_1, \dots \inner_d})}$ can simply simulate
+		$\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$.
+
+		Then, if $\advers$ can distinguish any transformation from $\Hyb_{2b}$ to $\Hyb_{2a}$, then we can break the security of a PRG
+		in the same manner as distinguishing $\Hyb_1$ and $\Hyb_{2a}$.
+
+		By the chain rule, we get that $\Hyb_0$ and $\Hyb_{2b}$ are indistinguishable even after a repeated
+		number of sequential invocations of the transformation in $\Hyb_{2a}$ and $\Hyb_{2b}$.
 	\end{proof}
 \end{lemma}
 

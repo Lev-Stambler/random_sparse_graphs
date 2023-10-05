@@ -59,7 +59,9 @@ Our modified security definition is as follows:
 \begin{aligned}
 	&\left\{
 		\begin{array}{l}
-		\vcenter{\hbox{$\advers^{\text{KeyGen}(\MSK, \cdot)}(\mathbf{\FECT})$}}
+		\vcenter{\hbox{
+			$\advers^{\text{KeyGen}(\MSK, \{\inner_1, \dots, \inner_d\})}(\mathbf{\FECT})$
+			}}
 		\end{array}
 		\begin{array}{l}
 		\left(1^n, 1^q\right) \leftarrow \advers^{(1)} \\
@@ -71,7 +73,9 @@ Our modified security definition is as follows:
 &\compInd \\
 	&\left\{
 		\begin{array}{l}
-		\vcenter{\hbox{$\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$}}
+		\vcenter{\hbox{
+			$\advers^{\Sim_3^{U_m(\{\inner_1, \dots, \inner_d\})}}(\FECT)$
+		}}
 		\end{array}
 		\begin{array}{l}
 		\left(1^n, 1^q\right) \leftarrow \advers{(1^\lambda)} \\

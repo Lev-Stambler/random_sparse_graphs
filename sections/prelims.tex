@@ -142,18 +142,18 @@ where the admissibility constraints remain the same.
 
 \subsection{Non-malleable Bounded FE}
 Here, we introduce the notion of non-malleable bounded functional encryption.
-While we make the definition explicit (in terms of its non-malleability), we prove
-that simulation-secure bounded FE is equivalent to simulation secure non-malleable bounded FE.
+% While we make the definition explicit (in terms of its non-malleability), we prove
+% that simulation-secure bounded FE is equivalent to simulation secure non-malleable bounded FE.
 
 % TODO: cite https://www.cs.cornell.edu/courses/cs687/2006fa/lectures/lecture16.pdf
 We define non-malleable security of bounded functional encryption in almost the exact
-notion of \cite{PassNM}. First,
+notion of \cite{PassNM} for public key encryption. First,
 let $NM(m_1, \dots, m_q, \advers)$ be a game as follows for $q = \poly(\lambda)$:
 \begin{enumerate}
 	\item $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
 	\item $\FECT_1, \dots, \FECT_q \gets \FEEnc(\MPK, m_1), \dots \FEEnc(\MPK, m_q)$
-	\item $c_1', \dots, c_\ell' \gets \advers(\MPK, \FECT_1, \dots, \FECT_q, 1^{|m|})$
-	\item $m_i' \gets \bot$ is $c_i = c_j$ for $j \in [q]$ and $\FEDec(\SK_{\text{identity}}, c_i)$ otherwise.
+	\item $\FECT_1', \dots, \FECT_\ell' \gets \advers(\MPK, \FECT_1, \dots, \FECT_q, 1^{|m|})$
+	\item $m_i' \gets \bot$ is $\FECT_i = \FECT_j'$ for any $i \in [q]$, $j \in [\ell]$ and $\FEDec(\SK_{\text{identity}}, c_i)$ otherwise.
 \end{enumerate}
 Then, we say that a bounded functional encryption scheme is non-malleable if for all PPT $\advers$
 and every PPT $\adversD$, there exists a negligible function $\negl$ such that
@@ -167,7 +167,7 @@ such that
 \begin{align}
 	\label{eq:NMRel}
 	\bigg|\Pr&\left[NM\left(m_1, \dots m_q, \advers(z)\right) \in \bigcup_{m \in \{m\}} R(m)\right]- \\
-				\Pr&\left[c \gets \Sim_{NM}(1^n, z); m' = \FEDec(\SK_{\text{identity}}, c); m' \in \bigcup_{m \in \{m\}} R(m)\right]\bigg| \leq \negl(\lambda).
+				\Pr&\left[c \gets \Sim_{NM}(1^n, z); m' = \FEDec(\SK_{\text{identity}}, c); m' \in \bigcup_{m \in \{m\}} R(m)\right]\bigg| \leq \negl(\lambda). \notag
 \end{align}
 Note that in the above definition, we do not give the adversary access to any $\SK_{C_i}$.
 We simply require that the scheme is public key (many message) non-malleable.

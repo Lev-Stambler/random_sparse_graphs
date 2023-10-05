@@ -8,14 +8,14 @@ Say that we have a sparse, potentially exponentially sized, graph $\graph = (\ve
 and $\forall v \in \verts, \deg(v) = d$.
 We also require that $\graph$ is equipped with a neighbor function, $\Gamma$, which can be computed in polynomial time.
 % (TODO: padding).
-We define a (pseudo) randomized and keyed labelling function $\phi: \verts \times \binSet^\lambda \rightarrow \binSet^{\poly(\lambda)}$ 
+We define a randomized and keyed labelling function $\phi: \binSet^\lambda \times \verts \rightarrow \binSet^{\poly(\lambda)}$ 
 such that given, $\phi(K, v_0)$ for root $v_0$, an adversary, $\advers$, which does not know a path from $v_0$ to $v$,
 \begin{equation}
 	\label{eq:guessPhi}
-	\Pr[\advers(\circNeigb, v_0, v, \labelFunc(K, v_0)) \in \imageFn(\labelFunc(K, v))] \leq O(v)\eps
+	\Pr[\advers(\circNeigb, v_0, v, \labelFunc(K, v_0)) \in \labelFunc(K, v)] \leq \negl(\lambda)
 \end{equation}
-for some fixed $\eps \leq \negl(\lambda)$ and function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$
-if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $0$ string of length $d |\labelFunc(K, \cdot)|$.
+for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) \in \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$
+if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string padded to length $d |\labelFunc(K, \cdot)|$.
 
 \subsection{Instantiation}
 We define $\labelFunc(K, v)$ to be as follows:
@@ -32,7 +32,7 @@ We can now define, $\circNeigb$.
 	\begin{algorithmic}[1]
 		\Function{$\inner_i$}{$K, v, r$}
 		 	\If{$\Gamma(v) = \emptyset$}
-				\State \Return $0 \in \binSet^*$ %TODO: define star to just be the same length....
+				\State \Return $\bot$
 			\EndIf
 			\State $u_1, \dots, u_d = \Gamma(v)$
 			\State $u = u_i$
@@ -138,7 +138,7 @@ We can now define, $\circNeigb$.
 % for all PPT $\advers$.
 
 \begin{proof}[Proof of \cref{eq:guessPhi}]
-	We are going to use layout a series of indistinguishable hybrids and then use non-malleability of FE
+	We are going to use a series of indistinguishable hybrids and then use non-malleability of FE
 	along with the last hybrid to show that \cref{eq:guessPhi} holds.
 	\begin{itemize}
 		\item $\Hyb_0$: In the first hybrid, the following game is played
@@ -149,18 +149,19 @@ We can now define, $\circNeigb$.
 				\item The challenger picks random $r_1, r_2 \randomGet \binSet^{\lambda'}$ and generates $\phi(K, v_0) = \FEEnc(\MPK, (K, v_0, r_2))$ using $r_1$ as the random coins and gives $\phi(K, v_0)$ to $\advers$.
 				\item $\advers$ outputs guess $g$ and wins if $g \in \phi(K, v)$
 			\end{enumerate}
-		\item $\Hyb_1$: We replace $\phi(K, v_0)$ with a simulated cipher-text using the simulator $\Sim_2$ 
-		$\MPK$ with its simulated counterpart using $\Sim_0$, and $\SK_{\inner_i}$ with its simulated counterpart using $\Sim_3$ as defined in \cref{eq:FEsec}.
+		\item $\Hyb_1$: We replace $\MPK$ with its simulated counterpart using $\Sim_0$,
+		$\phi(K, v_0)$ with a simulated cipher-text using the simulator $\Sim_2$,
+		and $\SK_{\inner_i}$ with its simulated counterpart using $\Sim_3$ as defined in \cref{eq:FEsec}.
 
-		\item $\Hyb_{2a}$: For any input into $\Sim_2$ via $\Pi^{K, w, r}$ where $w \in \Vert$
-		and $r$ is random, we replace the output of $\inner_i$ with $\inner_i'$ which uses true randomness $r_1^*, r_2^*$ in stead of $r_1, r_2$.
+		\item $\Hyb_{2a}$: For any input into $\Sim_2$ via $\Pi^{K, w, r}$ where $w \in \verts$
+		and $r$ is random, we replace the output of $\inner_i$ with $\inner_i'$ which uses true randomness $r_1^*, r_2^*$ instead of $r_1, r_2$.
 		For any call to $\circNeigb(\phi(K, w))$ by $\advers$ for $w \in \verts$,
-		we replace the output of $\inner_i$ with $\inner_i'$ which uses true randomness $r_1^*, r_2^*$ in stead of $r_1, r_2$.
+		we replace the output of $\inner_i$ with $\inner_i'$ which uses true randomness $r_1^*, r_2^*$ instead of $r_1, r_2$.
 		This is equivalent to changing $\Pi^m$ to ${\Pi^m}'$ in \cref{eq:FEsec} where ${\Pi^{m}}'$ is 
 		the list $\big(\inner_1, \inner_1'(\cdot), \dots, \inner_d, \inner_d'(\cdot)\big)$.
 		Note that this gives us that $\inner_i'(K, w, r) = \phi(K, u) = \FEEnc(\MPK, (K, u, r^*_2))$ where $u = \Gamma(w)_i$.
 
-		\item $\Hyb_{2b}$: For any call by $\advers$ to $\inner_i'(K, w, r) = \FECT$, we replace $\FECT$ with
+		\item $\Hyb_{2b}$: For any call by $\advers$ to $\inner_i'(K, w, r) = \FECT$, we replace $\FECT$
 		with $\FECT'$ where $\FECT'$ is the output of $\Sim_2$ with input ${\Pi^{(K, u, r)}}'$ where $u = \Gamma(w)_i$.
 
 		Note that the replacement of $\Hyb_{2a}$ and $\Hyb_{2b}$ are repeated multiple times.
@@ -176,20 +177,20 @@ We can now define, $\circNeigb$.
 		some part of $P$. We can note that this implies that $\advers$ never queries
 		$\inner_i(w^u)$ where $u = \Gamma(w^u)_i$ for some $u \in P$ and the adversary knows a path from $v_0$ to $w$.
 		We can see this because if there is no $u \in P$ such that $\advers$ never queries $\inner_i(w^u)$,
-		then the adversary knows a path from $v_0$ to $v$. Define $\pathSuffix(P)$ to be the path 
+		then the adversary knows and queries a path from $v_0$ to $v$. Define $\pathSuffix(P)$ to be the path 
 		which starts at $u$, ends at $v$, and is a suffix of $P$.
 		We now inductively build up a series of hybrids to show that a hybrid distribution
 		which ``erases'' $\phi(K, v)$ from $\inner_i$ is indistinguishable from the above hybrid.
 		\begin{itemize}
-			\item For the base case, let $U = \set{u_1, \dots, u_{\|\mathcal{P}\|} }$
-			where $u$ is the first vertex in $P$ such that $\advers$ never queries $\inner_i(w^u)$ as defined above.
-			Then, replace $\inner_i'(\cdot)$ with $\inner_i^*(\cdot)$ in $\Pi_m$ such that $\inner_i^*(w) = \inner_i'(w)$
-			if $w \neq w^u$ for $u \in U$ and otherwise $\inner_i^*(w^u) = \bot$. We can note that this hybrid is indistinguishable as
+			\item For the base case, let $U = \bigcup_{P \in \mathcal{P}} \set{\pathSuffix(P)_1}$
+			where $\pathSuffix(P)_1$ is the first vertex in $P$ such that $\advers$ never queries $\inner_i(w^u)$ as defined above.
+			Then, replace $\inner_i'(\cdot)$ with $\inner_i^1(\cdot)$ in $\Pi_m$ such that $\inner_i^1(w) = \inner_i'(w)$
+			if $w \neq w^u$ for $u \in U$ and otherwise $\inner_i^1(w^u) = \bot$. We can note that this hybrid is indistinguishable as
 			$\inner_i'$ only changes for input ciphertexts which the adversary never queries.
 			% TODO: need to show that the adversary does not know \phi(K, w^u)' where this is a different encryption
 			% of \phi(K, w^u) than one seen in a path
-			\item For the $\ell$-th inductive step, we are going to assume that we are given a hybrid such that $\inner_i^\ell$ such that $\inner_i^\ell(w^u) = \bot$
-			for $u \in U^\ell$ where $U^\ell$ where $U^\ell = \bigcup_{P \in \mathcal{P}} \pathSuffix(P)_1, \dots, \pathSuffix(P)_\ell$
+			\item For the $\ell$-th inductive step where $1 \leq \ell < \max_{P \in \mathcal{P}}(|\pathSuffix(P)|)$, we are going to assume that we are given a hybrid such that $\inner_i^\ell$ where $\inner_i^\ell(w^u) = \bot$
+			for $u \in U^\ell$ where $U^\ell = \bigcup_{P \in \mathcal{P}} \pathSuffix(P)_1, \dots, \pathSuffix(P)_\ell$
 			and otherwise $\inner_i^\ell(\cdot) = \inner_i'(\cdot)$. We now show that if $\advers$ can distinguish
 			between a hybrid with $\inner_i^\ell(\cdot)$ and $\inner_i^{\ell + 1}(\cdot)$, then the adversary can break
 			the non-malleability of the FE scheme.
@@ -205,7 +206,7 @@ We can now define, $\circNeigb$.
 	\end{equation*}
 	where $\circNeigb'$ is $\circNeigb$ except that $\circNeigb'$ uses $\inner_i^p$ where $p = \max_{P \in \mathcal{P}} |P|$.
 	We can note that $\circNeigb'$ returns $\bot$ for any query on $\phi(K, w^v)$ where $w^v \in \Gamma^{-1}(v)$.
-	Using \cref{lem:NMIndepA} and the fact that $\circNeigb'(u)_i$ returns $\bot$ for all $u \in \verts, i \in [d]$ where $v = \Gamma(u)_i$, we have that
+	Using \cref{lem:NMIndepA} and the fact that $\circNeigb'(u)_i$ returns $\bot$ for all $u \in \verts$ and $i \in [d]$ where $v = \Gamma(u)_i$, we have that
 	$$
 		\Pr[\advers(\circNeigb', v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] \leq \negl(\lambda).
 	$$
@@ -221,16 +222,16 @@ We can now define, $\circNeigb$.
 		where $m$ is fixed to $(K, v_0, r)$. We can see this as $\Hyb_1$ is  direct simulation of the FE scheme.
 
 		Then, if $\advers$ can distinguish $\Hyb_1$ and $\Hyb_{2a}$, then we can break the security of the $\PRG$ used in line \ref{alg:neighb:prg} of \cref{alg:neighb}.
-		We can create an adversary $\adversB$ which, for some fixed $K$, distinguishes between $\FEEnc(\MPK, (K, u r_2))$ with random coins $r_1$ where $r_1, r_2 = \PRG(r)$
+		We can create an adversary $\adversB$ which, for some fixed $K$, distinguishes between $\FEEnc(\MPK, (K, u, r_2))$ with random coins $r_1$ where $r_1, r_2 = \PRG(r)$
 		and $\FEEnc(\MPK, (K, u, r_1^*))$ encrypted with random coins $r_2^*$ where $r_1^*, r_2^*$ are truly random.
 
 		Then, if $\advers$ can distinguish any transformation from $\Hyb_{2a}$ to $\Hyb_{2b}$, then we can break the security of the FE scheme.
 		We can see this by noting that if we fix $m = (K, w, r)$ for random $r$ and $K$,
 		then $\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$ is distinguishable
-		and $\advers^{\sim_3^{u_m(\cdot)}}(\FECT')$ where $\FECT$ is the real cipher-text and $\FECT'$ is simulated.
+		and $\advers^{\Sim_3^{u_m(\cdot)}}(\FECT')$ where $\FECT$ is the real cipher-text and $\FECT'$ is simulated.
 		We can then note that if the above are distinguishable, then
 		$\advers^{\text{KeyGen}(\MSK, \set{\inner_1, \dots \inner_d})}(\FECT)$ 
-		and $\text{KeyGen}(\MSK, \set{\inner_1, \dots \inner_d})$ are distinguishable
+		and $\advers^{\Sim_3^{u_m(\cdot)}}(\FECT')$ are distinguishable
 		as $\advers^{\text{KeyGen}(\MSK, \set{\inner_1, \dots \inner_d})}$ can simply simulate
 		$\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$.
 
@@ -251,7 +252,7 @@ We can now define, $\circNeigb$.
 			We construct an adversary $\adversB$ that can break NM security using $\advers$ if $\advers$ can distinguish between the hybrids
 			in the inductive step.
 			Note that in order to distinguish between the hybrids, $\advers$ must have queried $\inner^\ell_i$ or $\inner^\ell_{i + 1}$ on $\phi(K, w^u)$ where $u \in \set{\pathSuffix(P)_{\ell + 1} \mid P \in \mathcal{P}}$
-			as the this is the only difference between the hybrids.
+			as this is the only difference between the hybrids.
 			Thus, we see that $\advers$ is able to produce $\FECT \in \phi(K, w^u)$.
 			By definition of $\inner_i^\ell$ though, we know that $\inner_i^\ell(\phi(k, q)) \neq \phi(K, w^u)$
 			for any $q \in \verts$ as we define $\inner_i^\ell(K, q) = \bot$ if $\inner_i'(K, q) = \phi(K, w^u)$.
@@ -264,7 +265,7 @@ We can now define, $\circNeigb$.
 			$\adversB$ simply has to invoke $\Sim_3$ to create a simulated function key for $\SK_{\inner_i}'$
 			and thus a simulated $\circNeigb'$.
 			$\adversB$ then gives $\advers$ $(w^u, v_0, \circNeigb', \phi(K, v_0))$.
-			$\adversB$ then breaks \cref{eq:NMRel} (this is supposed to be the NM relationship equation) as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator 
+			$\adversB$ then breaks \cref{eq:NMRel} (the relational notion of non-malleability) as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator 
 			in \cref{eq:NMRel} cannot.
 		\end{proof}
 \end{lemma}

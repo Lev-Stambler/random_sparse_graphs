@@ -150,12 +150,15 @@ for all PPT $\advers$.
 				\item The challenger picks random $r_1, r_2 \randomGet \binSet^{\lambda'}$ and generates $\phi(K, v_0) = \FEEnc(\MPK, (K, v_0, r_2))$ using $r_1$ as the random coins and gives $\phi(K, v_0)$ to $\advers$.
 				\item $\advers$ outputs guess $g$ and wins if $g \in \phi(K, v)$
 			\end{enumerate}
-		\item $\Hyb_1$: We replace the entire graph with its simulated counterpart, such that
-		the output of $\inner_i$ is replaced with $\inner_i'$ which encrypts its output ciphertext with true randomness.
-
-		\item $\Hyb_{1.5}$: We replace $\SK_{C_i}$ with its simulated equivalent
-		
-		\item $\Hyb_2$: Consider this hybrid to be a series of hybrids indexed by $\ell$:
+		% TODO: say what simulator
+		\item $\Hyb_1$: We replace $\phi(K, v_0)$ with a simulated cipher-text.
+		\item $\Hyb_2$: For any call to $\circNeigb(\phi(K, w))$,
+		we replace the output of $\inner_i$ with $\inner_i'$ which uses true randomness $r_1^*, r_2^*$ in stead of $r_1, r_2$.
+		Note that this gives us that $\inner_i'(K, w, r) = \phi(K, u)$ where $u = \Gamma(w)_i$.
+		\item $\Hyb_3$: For any $\circNeigb(\phi(K, v_0))_i$ where $i \in [d]$, we replace the output of
+		% TODO: say what simulator and how
+		\item $\Hyb_4$: We replace $\SK_{C_i}$ with its simulated equivalent
+		\item $\Hyb_5$: Consider this hybrid to be a series of hybrids indexed by $\ell$:
 		\begin{itemize}
 			\item For each $\ell$, we replace the pre-neighb of first node in $p'$ with $\bot$. We then note that by NM (see next lemma), we cannot get the next ct
 		We then replace the next pre-img with bot and continue

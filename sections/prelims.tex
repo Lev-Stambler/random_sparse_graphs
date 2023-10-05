@@ -14,7 +14,7 @@
 \section{Preliminaries}
 \subsection{Bounded Functional Encryption}
 We will use the notation of static, bounded functional encryption as presented in
-\cite{agrawal2017functional}.
+\cite{garg2022dynamic}.
 
 \subsubsection*{Security}
 % urrr... ughh we need to make this LaTeX. Low key use **nougat** for this.
@@ -24,44 +24,103 @@ which fixes the adversary's output circuit.
 We will assume that we get circuit $C_1, \dots, C_d$.
 
 % See page 8 of \cite{agrawal2017functional} for now. I'll put in the actual definition later.
+For completeness, we have the original security definition of \cite{garg2022dynamic} below:
+\[
+\begin{aligned}
+&\left\{
+\begin{array}{l}
+\vcenter{\hbox{$\advers^{\text{KeyGen}(\MSK, \cdot)}(\mathbf{\FECT})$}}
+\end{array}
+\begin{array}{l}
+\left(1^n, 1^q\right) \leftarrow \advers^{(1)} \\
+\left(\MPK, \MSK\right) \leftarrow \text{Setup}\left(1^n, 1^q\right) \\
+m \leftarrow \advers^{\text{KeyGen}(\MSK)}(\MPK) \\
+\FECT \leftarrow \text{Enc}(\MPK, m)
+\end{array}
+\right\}_{\lambda \in \N}\\
+&\compInd \\
+&\left\{
+\begin{array}{l}
+\vcenter{\hbox{$\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$}}
+\end{array}
+\begin{array}{l}
+\left(1^n, 1^q\right) \leftarrow \advers{(1^\lambda)} \\
+\left(\MPK, \mathbf{st}_0\right) \leftarrow \Sim_0\left(1^\lambda, 1^n, q\right) \\
+m \leftarrow \advers^{S_1(\mathbf{st}_0)}(\MPK) \\
+\left(\FECT, \mathbf{st}_2\right) \leftarrow \Sim_2(\mathbf{st}_1, \Pi^m)
+\end{array}
+\right\}_{\lambda \in \N}
+\end{aligned}
+\]
 
+Our modified security definition is as follows:
+\[
+\begin{aligned}
+	&\left\{
+		\begin{array}{l}
+		\vcenter{\hbox{$\advers^{\text{KeyGen}(\MSK, \cdot)}(\mathbf{\FECT})$}}
+		\end{array}
+		\begin{array}{l}
+		\left(1^n, 1^q\right) \leftarrow \advers^{(1)} \\
+		\left(\MPK, \MSK\right) \leftarrow \text{Setup}\left(1^n, 1^q\right) \\
+		m \leftarrow \advers(\MPK, \SK_{C_1}, \dots, \SK_{C_d}) \\
+		\FECT \leftarrow \text{Enc}(\MPK, m)
+		\end{array}
+	\right\}_{\lambda \in \N}\\
+&\compInd \\
+	&\left\{
+		\begin{array}{l}
+		\vcenter{\hbox{$\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$}}
+		\end{array}
+		\begin{array}{l}
+		\left(1^n, 1^q\right) \leftarrow \advers{(1^\lambda)} \\
+		\left(\MPK, \mathbf{st}_0\right) \leftarrow \Sim_0\left(1^\lambda, 1^n, q\right) \\
+		m \leftarrow \advers^{S_1(\mathbf{st}_0)}(\MPK, C_1, \dots, C_d) \\
+		\left(\FECT, \mathbf{st}_2\right) \leftarrow \Sim_2(\mathbf{st}_1, \Pi^m)
+		\end{array}
+	\right\}_{\lambda \in \N}
+\end{aligned}
+\]
 
-\begin{minipage}{0.46\textwidth}
-\begin{algorithm}[H]
-    \centering
-    \caption{$\ExpReal(1^\lambda)$}
-    \begin{algorithmic}[1]
-        \State $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
-				\State $\SK_{C_i} \gets \FEKeygen(\MSK, C_i)$ for $i \in [d]$
-				\State $x_i \gets \advers(\SK_{C_i})$
-				\State $\FECT_i \gets \FEEnc(\MPK, x_i)$
-				\State $\alpha \gets \advers(\FECT_1, \dots, \FECT_d)$
-				\State \Return $x_1, \dots, x_d, \alpha$
-    \end{algorithmic}
-		\label{alg:FEExprReal}
-\end{algorithm}
-\end{minipage}
-\hfill
-\begin{minipage}{0.46\textwidth}
-\begin{algorithm}[H]
-    \centering
-    \caption{$\ExpSim(1^\lambda)$}\label{alg:FEExprSim}
-    \begin{algorithmic}[1]
-        \State $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
-				\State $\SK_{C_i} \gets \FEKeygen(\MSK, C_i)$ for $i \in [d]$
-				\State $x_i \gets \advers(\SK_{C_i})$
-				\State $\FECT_i \gets \Sim(1^\lambda, 1^{|x_i|}, \MPK, C_i, \SK_{C_i}, C_i(x_i))$
-				\State $\alpha \gets \advers(\FECT_1, \dots, \FECT_d)$
-				\State \Return $x_1, \dots, x_d, \alpha$
-    \end{algorithmic}
-\end{algorithm}
-\end{minipage}
+we also copy th admissibility constraints of \cite{garg2022dynamic}:
+% TODO:!
 
-TODO: change to use this definition https://eprint.iacr.org/2019/314.pdf
-because in the above we can \emph{simulate} $SK_{C_i}$.
-Actually no: use https://eprint.iacr.org/2021/847.pdf because statefulness / simplicity
+% \begin{minipage}{0.46\textwidth}
+% \begin{algorithm}[H]
+%     \centering
+%     \caption{$\ExpReal(1^\lambda)$}
+%     \begin{algorithmic}[1]
+%         \State $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
+% 				\State $\SK_{C_i} \gets \FEKeygen(\MSK, C_i)$ for $i \in [d]$
+% 				\State $x_i \gets \advers(\SK_{C_i})$
+% 				\State $\FECT_i \gets \FEEnc(\MPK, x_i)$
+% 				\State $\alpha \gets \advers(\FECT_1, \dots, \FECT_d)$
+% 				\State \Return $x_1, \dots, x_d, \alpha$
+%     \end{algorithmic}
+% 		\label{alg:FEExprReal}
+% \end{algorithm}
+% \end{minipage}
+% \hfill
+% \begin{minipage}{0.46\textwidth}
+% \begin{algorithm}[H]
+%     \centering
+%     \caption{$\ExpSim(1^\lambda)$}\label{alg:FEExprSim}
+%     \begin{algorithmic}[1]
+%         \State $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
+% 				\State $\SK_{C_i} \gets \FEKeygen(\MSK, C_i)$ for $i \in [d]$
+% 				\State $x_i \gets \advers(\SK_{C_i})$
+% 				\State $\FECT_i \gets \Sim(1^\lambda, 1^{|x_i|}, \MPK, C_i, \SK_{C_i}, C_i(x_i))$
+% 				\State $\alpha \gets \advers(\FECT_1, \dots, \FECT_d)$
+% 				\State \Return $x_1, \dots, x_d, \alpha$
+%     \end{algorithmic}
+% \end{algorithm}
+% \end{minipage}
 
-Note that the adversary $\advers$ and simulator are stateful but we do not include this in the above notation for simplicity.
+% TODO: change to use this definition https://eprint.iacr.org/2019/314.pdf
+% because in the above we can \emph{simulate} $SK_{C_i}$.
+% Actually no: use https://eprint.iacr.org/2021/847.pdf because statefulness / simplicity
+
+% Note that the adversary $\advers$ and simulator are stateful but we do not include this in the above notation for simplicity.
 
 \subsection{Non-malleable Bounded FE}
 Here, we introduce the notion of non-malleable bounded functional encryption.

@@ -1,4 +1,4 @@
-\section{A sketch for the boys}
+\section{Randomized DAG Traversal Sketch}
 \newcommand{\labelFunc}{\phi}
 \newcommand{\imageFn}{\text{Image}}
 \newcommand{\pathSuffix}{\text{Suff}}
@@ -199,7 +199,7 @@ for all PPT $\advers$.
 			% TODO::!!
 		\end{itemize}
 	\end{itemize}
-	Finally, we can note that by the indistinguishably of $\Hyb_0$ and $\Hyb_5$,
+	Finally, we can note that if $\Hyb_0 \compInd \Hyb_3$,
 	\begin{equation*}
 		\Pr[\advers(\circNeigb, v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] 
 		\compInd
@@ -207,7 +207,7 @@ for all PPT $\advers$.
 	\end{equation*}
 	where $\circNeigb'$ is $\circNeigb$ except that $\circNeigb'$ uses $\inner_i^p$ where $p = \max_{P \in \mathcal{P}} |P|$.
 	We can note that $\circNeigb'$ returns $\bot$ for any query on $\phi(K, w^v)$ where $w^v \in \Gamma^{-1}(v)$.
-	Using \cref{lem:NMIndepA}, we have that
+	Using \cref{lem:NMIndepA} and the fact that $\circNeigb'(u)_i$ returns $\bot$ for all $u \in \verts, i \in [d]$ where $v = \Gamma(u)_i$, we have that
 	$$
 		\Pr[\advers(\circNeigb', v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] \leq \negl(\lambda).
 	$$
@@ -254,21 +254,20 @@ for all PPT $\advers$.
 			in the inductive step.
 			Note that in order to distinguish between the hybrids, $\advers$ must have queried $\inner^\ell_i$ or $\inner^\ell_{i + 1}$ on $\phi(K, w^u)$ where $u \in \set{\pathSuffix(P)_{\ell + 1} \mid P \in \mathcal{P}}$
 			as the this is the only difference between the hybrids.
-			Thus, we see that $\advers$ is able to produce to produce $\FECT \in \phi(K, w^u)$.
+			Thus, we see that $\advers$ is able to produce $\FECT \in \phi(K, w^u)$.
 			By definition of $\inner_i^\ell$ though, we know that $\inner_i^\ell(\phi(k, q)) \neq \phi(K, w^u)$
 			for any $q \in \verts$ as we define $\inner_i^\ell(K, q) = \bot$ if $\inner_i'(K, q) = \phi(K, w^u)$.
-			Thus, the adversary has to be able to produce $\FECT \in \phi(K, w^u)$ without calling $\circNeigb$.
+			Thus, the adversary has to be able to produce $\FECT \in \phi(K, w^u)$ without calling $\circNeigb^\ell$
+			where $\circNeigb^\ell$ uses $\inner_i^\ell$ instead of $\inner_i$.
 
 			Thus, if $\advers(w^u, v_0, \circNeigb, \phi(K, v_0))$ can produce $\FECT \in \phi(K, w^u)$,
 			we can have $\adversB(\phi(K, v_0), \phi(K, q_1), \dots,$ $ \phi(K,q_{\poly(\lambda)}))$ 
 			produce $\phi(K, w^u)$ where $q_1, \dots, q_{\poly(\lambda)}$ are all the vertices that $\advers$ has queried $\circNeigb$ on.
-			$\adversB$ simply has to invoke $\Sim_1$ to create a simulated set of function keys for $\inner_i$ for all $i \in [d]$
-			and can then simulate $\circNeigb$.
-
-			We can then have $\adversB$ invoke $\Sim_1$ to create a simulated function key for $\SK_{\inner_i}'$
+			$\adversB$ simply has to invoke $\Sim_3$ to create a simulated function key for $\SK_{\inner_i}'$
 			and thus a simulated $\circNeigb'$.
 			$\adversB$ then gives $\advers$ $(w^u, v_0, \circNeigb', \phi(K, v_0))$.
-			we can then break \cref{eq:NMRel} as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator cannot.
+			$\adversB$ then breaks \cref{eq:NMRel} (this is supposed to be the NM relationship equation) as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator 
+			in \cref{eq:NMRel} cannot.
 		\end{proof}
 \end{lemma}
 
@@ -283,18 +282,19 @@ for all PPT $\advers$.
 			\Pr[\advers(\circNeigb', v_0, u, U, \phi(K, v_0)) \in \imageFn(\phi(K, u))] \leq \negl(\lambda).
 		\end{equation}
 		\begin{proof}
-			We construct an adversary $\adversB$ that can break NM security using $\advers$ if $\advers$ can
+			Almost identically to \cref{lem:NMIndep}, we construct an adversary $\adversB$ that can break NM security using $\advers$ if $\advers$ can
 			produce $\FECT \in \phi(K, u)$ for some $u \in U$.
 			
-			If $\advers(w^u, v_0, \circNeigb, u, U, \phi(K, v_0))$ can produce $\FECT \in \phi(K, u)$,
+			If $\advers(w^u, v_0, \circNeigb', u, \phi(K, v_0))$ can produce $\FECT \in \phi(K, u)$,
 			we can have $\adversB(\phi(K, v_0), \phi(K, q_1), \dots,$ $ \phi(K,q_{\poly(\lambda)}))$ 
 			produce $\phi(K, u)$ where $q_1, \dots, q_{\poly(\lambda)}$ are all the vertices that $\advers$ has queried $\circNeigb'$ on.
-			$\adversB$ simply has to invoke $\Sim_1$ to create a simulated set of function keys for $\inner_i$ for all $i \in [d]$
+			$\adversB$ simply has to invoke $\Sim_3$ to create a simulated set of function keys for $\inner_i'$ for all $i \in [d]$
 			and can then simulate $\circNeigb'$ with these function keys.
 
-			We can then have $\adversB$ invoke $\Sim_1$ to create a simulated function key for $\SK_{\inner_i}'$
+			We can then have $\adversB$ invoke $\Sim_3$ to create a simulated function key for $\SK_{\inner_i}'$
 			and thus a simulated $\circNeigb^{*}$.
 			$\adversB$ then gives $\advers$ $(w^u, v_0, \circNeigb^{*}, \phi(K, v_0))$.
-			We can then break \cref{eq:NMRel} (this is supposed to be the NM relationship equation) as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator cannot.
+			We can then break \cref{eq:NMRel} (the relational notion of security for non-malleability) as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator 
+			in \cref{eq:NMRel} cannot.
 		\end{proof}
 \end{lemma}

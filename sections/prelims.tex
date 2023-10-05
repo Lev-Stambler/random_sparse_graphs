@@ -152,12 +152,11 @@ for all $\set{m}_0, \set{m}_1 \in \{0, 1\}^{nq}$, we have
 
 As outlined in \cite{PassNM}, we can equivalently define non-malleability in terms of a PPT recognizable relation $R$
 such that
-\begin{align*}
-	% TODO:  fix styling...
+\begin{align}
 	\label{eq:NMRel}
 	\bigg|\Pr&\left[NM(\{m\} , \advers(z) \in \bigcup_{m \in \{m\}} R(m)\right]- \\
 				\Pr&\left[c \gets \Sim_{NM}(1^n, z); m' = \FEDec(\SK_{\text{identity}}, c); m' \in \bigcup_{m \in \{m\}} R(m)\right]\bigg| \leq \negl(\lambda).
-\end{align*}
+\end{align}
 Note that in the above definition, we do not give the adversary access to any $\SK_{C_i}$.
 We simply require that the scheme is public key non-malleable.
 

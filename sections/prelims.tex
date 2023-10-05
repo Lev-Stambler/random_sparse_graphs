@@ -52,6 +52,18 @@ m \leftarrow \advers^{S_1(\mathbf{st}_0)}(\MPK) \\
 \right\}_{\lambda \in \N}
 \end{aligned}
 \]
+whenever the following admissibility constraints and properties are satisfied:
+\begin{itemize}
+	\item $\Sim_1, \Sim_3$ are stateful in that after each invocation, they updated their
+	states $\mathbf{st}_1, \mathbf{st}_3$ respectively which is carried over to the next invocation.
+	\item $\Pi^m$ contains a list of functions $f_i$ queried by $\advers$ in the pre-challenge
+	phase along with their output on the challenge message $m$. That is, if $f_i$ is the $i$-th
+	function queried by $\advers$ to oracle $\Sim_1$ and $q_{[re}$ be the number of queries $\advers$
+	makes before outputting $m$, then $\Pi^m = \big((f_1, f_1(m)), \dots, (f_{q_{pre}}, f_{q_{pre}}(m))\big)$.
+	\item $\advers$ makes at most $q$ queries combined tote key generation oracle in both games.
+	\item $\Sim_3$ for eac queried function $f_i$, in the post challenge phase, makes a single query to its
+	message oracle $U_m$ on the same $f_i$ itself.
+\end{itemize}
 
 Our modified security definition is as follows:
 \begin{equation}
@@ -86,8 +98,9 @@ Our modified security definition is as follows:
 	\right\}_{\lambda \in \N}
 \end{aligned}
 \end{equation}
+where the admissibility constraints remain the same.
 
-we also copy th admissibility constraints of \cite{garg2022dynamic}:
+% we also copy th admissibility constraints of \cite{garg2022dynamic}:
 % TODO:!
 
 % \begin{minipage}{0.46\textwidth}

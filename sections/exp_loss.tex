@@ -1,6 +1,7 @@
 \section{A sketch for the boys}
 \newcommand{\labelFunc}{\phi}
 \newcommand{\imageFn}{\text{Image}}
+\newcommand{\pathSuffix}{\text{Suff}}
 
 \subsection{DAG Randomized Traversal}
 Say that we have a sparse, potentially exponentially sized, graph $\graph = (\verts, \edges)$
@@ -49,79 +50,79 @@ We can now define, $\circNeigb$.
 	\label{alg:neighb}
 \end{algorithm}
 
-Before showing that our definition of $\labelFunc$ and $\circNeigb$ satisfy \cref{eq:guessPhi}, we first must show that an adversary cannot find $K$.
-\begin{lemma}
-	\label{lem:findK}
-	Let $\advers$ be a PPT adversary which can find $K$ with probability $N\eps$.
-	Then, there exists a PPT adversary, $\adversB$ which can break the FE scheme with probability $\eps$.	
-	Or, given that the FE scheme is $\eps$ secure, then,
-	\begin{equation*}
-		\Pr[\advers(\Gamma, \circNeigb, v_0, \labelFunc(K, v_0)) = K] \leq O(|\verts|)\eps
-	\end{equation*}
-	\begin{proof}
-		We first prove the above but in the case of selective security. I.e.\ the adversary has to fix
-		its query path at the start.
-		We then use standard complexity leveraging techniques to achieve adaptive security.
+% Before showing that our definition of $\labelFunc$ and $\circNeigb$ satisfy \cref{eq:guessPhi}, we first must show that an adversary cannot find $K$.
+% \begin{lemma}
+% 	\label{lem:findK}
+% 	Let $\advers$ be a PPT adversary which can find $K$ with probability $N\eps$.
+% 	Then, there exists a PPT adversary, $\adversB$ which can break the FE scheme with probability $\eps$.	
+% 	Or, given that the FE scheme is $\eps$ secure, then,
+% 	\begin{equation*}
+% 		\Pr[\advers(\Gamma, \circNeigb, v_0, \labelFunc(K, v_0)) = K] \leq O(|\verts|)\eps
+% 	\end{equation*}
+% 	\begin{proof}
+% 		We first prove the above but in the case of selective security. I.e.\ the adversary has to fix
+% 		its query path at the start.
+% 		We then use standard complexity leveraging techniques to achieve adaptive security.
 
-		We proceed via a series of hybrids. Note that for $|\verts| \geq \exp(\lambda)$, we require exponential hardness for the FE scheme.
-		As such, let modified security parameter $\lambda' = \lambda + O(\log |\verts|)$.
-		\begin{itemize}
-			\item $\Hyb_0$: In the first hybrid, the following game is played
-				\begin{enumerate}
-					\item $K \randomGet \binSet^{\lambda'}$ and $\MPK, \SK \gets \FESetup(1^{\lambda'})$.
-					\item The challenger generates $\SK_{\inner_i} \gets \FEKeygen(\MSK, \inner_i)$ for $i \in [d]$ and gives these keys to $\advers$
-					\item The challenger picks random $r_1, r_2 \randomGet \binSet^{\lambda'}$ and generates $\phi(K, v_0) = \FEEnc(\MPK, (K, v_0, r_2))$ using $r_1$ as the random coins and gives $\phi(K, v_0)$ to $\advers$.
-					\item $\advers$ outputs guess $K'$ and wins if $K = K'$
-				\end{enumerate}
-			\item $\Hyb_1$: We replace the \emph{entire graph} with its simulated counterpart,
-			starting at the root and moving to the leaves.
-			TODO: we basically replace the ct with simulated, replace the output with true randomness,
-			giving us a valid ct\_next, then we move on to the next ct, etc.
+% 		We proceed via a series of hybrids. Note that for $|\verts| \geq \exp(\lambda)$, we require exponential hardness for the FE scheme.
+% 		As such, let modified security parameter $\lambda' = \lambda + O(\log |\verts|)$.
+% 		\begin{itemize}
+% 			\item $\Hyb_0$: In the first hybrid, the following game is played
+% 				\begin{enumerate}
+% 					\item $K \randomGet \binSet^{\lambda'}$ and $\MPK, \SK \gets \FESetup(1^{\lambda'})$.
+% 					\item The challenger generates $\SK_{\inner_i} \gets \FEKeygen(\MSK, \inner_i)$ for $i \in [d]$ and gives these keys to $\advers$
+% 					\item The challenger picks random $r_1, r_2 \randomGet \binSet^{\lambda'}$ and generates $\phi(K, v_0) = \FEEnc(\MPK, (K, v_0, r_2))$ using $r_1$ as the random coins and gives $\phi(K, v_0)$ to $\advers$.
+% 					\item $\advers$ outputs guess $K'$ and wins if $K = K'$
+% 				\end{enumerate}
+% 			\item $\Hyb_1$: We replace the \emph{entire graph} with its simulated counterpart,
+% 			starting at the root and moving to the leaves.
+% 			TODO: we basically replace the ct with simulated, replace the output with true randomness,
+% 			giving us a valid ct\_next, then we move on to the next ct, etc.
 
-			\item $\Hyb_1$: We replace the \emph{entire graph} with its simulated counterpart.
-			We start with the leaves and then ``work backwards'' doing two steps at a time.
-			Let $U_1, \dots, U_D$ be a partition of $V$ such that for all $u \in U_i$, the minimum distance from $u$ to a the root is $i$.
-			Starting with $j = D$, we do the following
-			\begin{enumerate}
-				\item For vertex $u \in U_j$, we invoke the FE simulator to get
-				\begin{align*}
-						\FECT_{u}' \gets \Sim\big(1^\lambda, &1^{TODO}, \MPK, (\inner_1, \dots, \inner_d), (\SK_{\inner_1}, \dots \SK_{\inner_d}),\\
-							&(\inner'_1(u), \dots, \inner'_d(u))\big)
-				\end{align*}
-				where $\inner'_i$ is the same as $\inner_i$ except that instead of using $r_1$ as randomness for $\FEEnc$, we use $r_1'$ which is true randomness that is fixed for $u$.
-				Moreover, $\inner'_i$ uses true, fixed randomness, $r_2'$, rather than $r_2$.
-				\item For all $w \in \verts$ where $\Gamma(w)_i = u$, we replace $\inner'_i(\phi(K, w))$ with $\FECT_{u}'$.
-				\label{alg:proof:neighb:replace}
-				\item If $j \neq 1$, we go back to step 1 with $j = j - 1$.
-			\end{enumerate}
-		\end{itemize}
-		Assuming $\Hyb_1$ and $\Hyb_0$ computational indistinguishable, if we can guess $K$, then we can build an adversary $\adversB$ which can show that $\Hyb_0$ and $\Hyb_1$ are not indistinguishable.
-		An adversary $\adversB$ can simply feed in the observables of $\Hyb_0$ into $\advers$ and $\Hyb_1$ into $\advers$.
-		As $\Hyb_1$ is independent of K, we necessarily have that $\Pr[\advers(\Hyb_1) = K] \leq \negl(\lambda)$.
-		Then, we can note that if $\advers$ can guess $K$ then, $\Pr[\advers(\Hyb_0) = K] > \negl(\lambda)$.
-		Thus, we have that $\Pr[\advers(\Hyb_0) = K] - \Pr[\advers(\Hyb_1) = K] > \negl(\lambda)$ and thus $\Hyb_0$ and $\Hyb_1$ are not computationally indistinguishable.	\\
-		% TODO: do we need a CRHF of K to check whether or not we are in \Hyb_0 or \Hyb_1?
+% 			\item $\Hyb_1$: We replace the \emph{entire graph} with its simulated counterpart.
+% 			We start with the leaves and then ``work backwards'' doing two steps at a time.
+% 			Let $U_1, \dots, U_D$ be a partition of $V$ such that for all $u \in U_i$, the minimum distance from $u$ to a the root is $i$.
+% 			Starting with $j = D$, we do the following
+% 			\begin{enumerate}
+% 				\item For vertex $u \in U_j$, we invoke the FE simulator to get
+% 				\begin{align*}
+% 						\FECT_{u}' \gets \Sim\big(1^\lambda, &1^{TODO}, \MPK, (\inner_1, \dots, \inner_d), (\SK_{\inner_1}, \dots \SK_{\inner_d}),\\
+% 							&(\inner'_1(u), \dots, \inner'_d(u))\big)
+% 				\end{align*}
+% 				where $\inner'_i$ is the same as $\inner_i$ except that instead of using $r_1$ as randomness for $\FEEnc$, we use $r_1'$ which is true randomness that is fixed for $u$.
+% 				Moreover, $\inner'_i$ uses true, fixed randomness, $r_2'$, rather than $r_2$.
+% 				\item For all $w \in \verts$ where $\Gamma(w)_i = u$, we replace $\inner'_i(\phi(K, w))$ with $\FECT_{u}'$.
+% 				\label{alg:proof:neighb:replace}
+% 				\item If $j \neq 1$, we go back to step 1 with $j = j - 1$.
+% 			\end{enumerate}
+% 		\end{itemize}
+% 		Assuming $\Hyb_1$ and $\Hyb_0$ computational indistinguishable, if we can guess $K$, then we can build an adversary $\adversB$ which can show that $\Hyb_0$ and $\Hyb_1$ are not indistinguishable.
+% 		An adversary $\adversB$ can simply feed in the observables of $\Hyb_0$ into $\advers$ and $\Hyb_1$ into $\advers$.
+% 		As $\Hyb_1$ is independent of K, we necessarily have that $\Pr[\advers(\Hyb_1) = K] \leq \negl(\lambda)$.
+% 		Then, we can note that if $\advers$ can guess $K$ then, $\Pr[\advers(\Hyb_0) = K] > \negl(\lambda)$.
+% 		Thus, we have that $\Pr[\advers(\Hyb_0) = K] - \Pr[\advers(\Hyb_1) = K] > \negl(\lambda)$ and thus $\Hyb_0$ and $\Hyb_1$ are not computationally indistinguishable.	\\
+% 		% TODO: do we need a CRHF of K to check whether or not we are in \Hyb_0 or \Hyb_1?
 
 
-		Now we just have to show that $\Hyb_0 \compInd \Hyb_1$. First, we can note
-		that $\inner_i(\phi(K, u)) \compInd \inner_i'(\phi(K, u))$ as if these distributions are indistinguishable,
-		we can break the security of the $\PRG$ used in line \ref{alg:neighb:prg} of \cref{alg:neighb}. 
-		% TODO: more concrete?
-		Now, we can note that if $\FECT_u = \phi(K, u)$, we have that $\FECT_u \compInd \FECT_u'$ are indistinguishable
-		if $\inner_i(\FECT_u) \compInd \inner_i(\FECT_u')$ for all $i \in [d]$. We can note that this holds true for
-		$u$ if $u$ is a leaf as $\inner_i(u) = 0$ and thus we can invoke the security of the FE simulator.
-		Then, by step \ref{alg:proof:neighb:replace} in the above hybrid, we inductively create the hybrid
-		such that $\inner_i(\FECT_w) \compInd \inner_i(\FECT_w')$. Thus, as we work backwards from the leaves,
-		we have that $\FECT_u \compInd \FECT_u'$ for all $u \in \verts$. Assuming that the FE scheme is $\eps$ secure
-		and the distance from the distributions of $\inner_i(\FECT_u)$ and $\inner_i'(\FECT_u)$ is at most $\eps$,
-		then by the triangle inequality, we have that the distance between $\Hyb_0$ and $\Hyb_1$ is at most
-		$O(|\verts|)\eps$.
-		More formally, we have that for any PPT adversary, $\adversB$,
-		\begin{equation*}
-			\big| \Pr[\adversB(\Hyb_0) = 1] - \Pr[\adversB(\Hyb_1) = 1] \big| \leq O(|\verts|)\eps.
-		\end{equation*}
-	\end{proof}
-\end{lemma}
+% 		Now we just have to show that $\Hyb_0 \compInd \Hyb_1$. First, we can note
+% 		that $\inner_i(\phi(K, u)) \compInd \inner_i'(\phi(K, u))$ as if these distributions are indistinguishable,
+% 		we can break the security of the $\PRG$ used in line \ref{alg:neighb:prg} of \cref{alg:neighb}. 
+% 		% TODO: more concrete?
+% 		Now, we can note that if $\FECT_u = \phi(K, u)$, we have that $\FECT_u \compInd \FECT_u'$ are indistinguishable
+% 		if $\inner_i(\FECT_u) \compInd \inner_i(\FECT_u')$ for all $i \in [d]$. We can note that this holds true for
+% 		$u$ if $u$ is a leaf as $\inner_i(u) = 0$ and thus we can invoke the security of the FE simulator.
+% 		Then, by step \ref{alg:proof:neighb:replace} in the above hybrid, we inductively create the hybrid
+% 		such that $\inner_i(\FECT_w) \compInd \inner_i(\FECT_w')$. Thus, as we work backwards from the leaves,
+% 		we have that $\FECT_u \compInd \FECT_u'$ for all $u \in \verts$. Assuming that the FE scheme is $\eps$ secure
+% 		and the distance from the distributions of $\inner_i(\FECT_u)$ and $\inner_i'(\FECT_u)$ is at most $\eps$,
+% 		then by the triangle inequality, we have that the distance between $\Hyb_0$ and $\Hyb_1$ is at most
+% 		$O(|\verts|)\eps$.
+% 		More formally, we have that for any PPT adversary, $\adversB$,
+% 		\begin{equation*}
+% 			\big| \Pr[\adversB(\Hyb_0) = 1] - \Pr[\adversB(\Hyb_1) = 1] \big| \leq O(|\verts|)\eps.
+% 		\end{equation*}
+% 	\end{proof}
+% \end{lemma}
 
 % \begin{lemma}
 % 	\label{lem:withoutCirc}
@@ -150,130 +151,133 @@ for all PPT $\advers$.
 				\item The challenger picks random $r_1, r_2 \randomGet \binSet^{\lambda'}$ and generates $\phi(K, v_0) = \FEEnc(\MPK, (K, v_0, r_2))$ using $r_1$ as the random coins and gives $\phi(K, v_0)$ to $\advers$.
 				\item $\advers$ outputs guess $g$ and wins if $g \in \phi(K, v)$
 			\end{enumerate}
-		% TODO: say what simulator
-		\item $\Hyb_1$: We replace $\phi(K, v_0)$ with a simulated cipher-text.
-		\item $\Hyb_2$: For any call to $\circNeigb(\phi(K, w))$,
+		\item $\Hyb_1$: We replace $\phi(K, v_0)$ with a simulated cipher-text using the simulator $\Sim_2$ 
+		$\MPK$ with its simulated counterpart using $\Sim_0$, and $\SK_{\inner_i}$ with its simulated counterpart using $\Sim_3$ as defined in \cref{eq:FEsec}.
+
+		\item $\Hyb_{2a}$: For any input into $\Sim_2$ via $\Pi^{K, w, r}$ where $w \in \Vert$
+		and $r$ is random, we replace the output of $\inner_i$ with $\inner_i'$ which uses true randomness $r_1^*, r_2^*$ in stead of $r_1, r_2$.
+		For any call to $\circNeigb(\phi(K, w))$ by $\advers$ for $w \in \verts$,
 		we replace the output of $\inner_i$ with $\inner_i'$ which uses true randomness $r_1^*, r_2^*$ in stead of $r_1, r_2$.
-		Note that this gives us that $\inner_i'(K, w, r) = \phi(K, u)$ where $u = \Gamma(w)_i$.
-		\item $\Hyb_3$: For any $\circNeigb(\phi(K, v_0))_i$ where $i \in [d]$, we replace the output of
-		% TODO: say what simulator and how
-		\item $\Hyb_4$: We replace $\SK_{C_i}$ with its simulated equivalent
-		\item $\Hyb_5$: Consider this hybrid to be a series of hybrids indexed by $\ell$:
+		This is equivalent to changing $\Pi^m$ to ${\Pi^m}'$ in \cref{eq:FEsec} where ${\Pi^{m}}'$ is 
+		the list $\big(\inner_1, \inner_1'(\cdot), \dots, \inner_d, \inner_d'(\cdot)\big)$.
+		Note that this gives us that $\inner_i'(K, w, r) = \phi(K, u) = \FEEnc(\MPK, (K, u, r^*_2))$ where $u = \Gamma(w)_i$.
+
+		\item $\Hyb_{2b}$: For any call by $\advers$ to $\inner_i'(K, w, r) = \FECT$, we replace $\FECT$ with
+		with $\FECT'$ where $\FECT'$ is the output of $\Sim_2$ with input ${\Pi^{(K, u, r)}}'$ where $u = \Gamma(w)_i$.
+
+		Note that the replacement of $\Hyb_{2a}$ and $\Hyb_{2b}$ are repeated multiple times.
+		Specifically, these replacements are repeated at most $\alpha$ times where $\alpha$ is the number
+		of unique times $\advers$ runs $\FEDec(\SK_{\inner_i}, \phi(K, w))$.
+
+
+		% Further, we use the simulator $\Sim_2$ to replace $\phi(K, u)$ with its simulated counterpart $\Sim_2(\mathbf{st}_1, \Pi^{(K, u, r^*_2)})$ with its simulated counterpart.
+		% TODO: hmmm... is this the exponential part?????
+
+		\item $\Hyb_3$: Let $\mathcal{P}$ be the set of all paths from $v_0$ to $v$. For each path $P \in \mathcal{P}$
+		where $P$ is an ordered list of connected vertices, we have that the adversary does not know
+		some part of $P$. We can note that this implies that $\advers$ never queries
+		$\inner_i(w^u)$ where $u = \Gamma(w^u)_i$ for some $u \in P$ and the adversary knows a path from $v_0$ to $w$.
+		We can see this because if there is no $u \in P$ such that $\advers$ never queries $\inner_i(w^u)$,
+		then the adversary knows a path from $v_0$ to $v$. Define $\pathSuffix(P)$ to be the path 
+		which starts at $u$, ends at $v$, and is a suffix of $P$.
+		We now inductively build up a series of hybrids to show that a hybrid distribution
+		which ``erases'' $\phi(K, v)$ from $\inner_i$ is indistinguishable from the above hybrid.
 		\begin{itemize}
-			\item For each $\ell$, we replace the pre-neighb of first node in $p'$ with $\bot$. We then note that by NM (see next lemma), we cannot get the next ct
-		We then replace the next pre-img with bot and continue
+			\item For the base case, let $U = \set{u_1, \dots, u_{\|\mathcal{P}\|} }$
+			where $u$ is the first vertex in $P$ such that $\advers$ never queries $\inner_i(w^u)$ as defined above.
+			Then, replace $\inner_i'(\cdot)$ with $\inner_i^*(\cdot)$ in $\Pi_m$ such that $\inner_i^*(w) = \inner_i'(w)$
+			if $w \neq w^u$ for $u \in U$ and otherwise $\inner_i^*(w^u) = \bot$. We can note that this hybrid is indistinguishable as
+			$\inner_i'$ only changes for input ciphertexts which the adversary never queries.
+			% TODO: need to show that the adversary does not know \phi(K, w^u)' where this is a different encryption
+			% of \phi(K, w^u) than one seen in a path
+			\item For the $\ell$-th inductive step, we are going to assume that we are given a hybrid such that $\inner_i^\ell$ such that $\inner_i^\ell(w^u) = \bot$
+			for $u \in U^\ell$ where $U^\ell$ where $U^\ell = \bigcup_{P \in \mathcal{P}} \pathSuffix(P)_1, \dots, \pathSuffix(P)_\ell$
+			and otherwise $\inner_i^\ell(\cdot) = \inner_i'(\cdot)$. We now show that if $\advers$ can distinguish
+			between a hybrid with $\inner_i^\ell(\cdot)$ and $\inner_i^{\ell + 1}(\cdot)$, then the adversary can break
+			the non-malleability of the FE scheme.
+			We defer this proof to \cref{lem:NMIndep}.
+			% TODO::!!
 		\end{itemize}
 	\end{itemize}
-	\begin{lemma}
-		\label{lem:NM}
-		Let $\advers$ be a PPT adversary, then assuming NM of scheme we have that $\Hyb_2$ step holds.
-		\begin{proof}
-			Assume that adversary $\advers$ can distinguish between $\Hyb_1 / \Hyb_2^{\ell - 1}$ and $\Hyb_2^\ell$ with non-negligible probability.
-			Then, we know that the adversary must have queried the pre-neighb of the node in $p'$
-			as otherwise the hybrids are the same.
-			But, this implies that $\advers$ can generate the pre-image ciphertext $\FECT_\ell$.
-			We know show that we can create and adversary $\adversB$ which can break the NM of the scheme.
-			For all ciphertexts that $\advers$ has seen via graph traversal, we fix $\advers_0$ in the NM
-			encryption to produce these ciphertexts. We then note that we know $\circNeigb(\phi(K, v_k))$
-			for $k \in \poly(\lambda)$ and can then invoke the simulator $S_1$ to create a simulated function key $\SK_{\inner_i}^*$.
-			We can then note that because the view of $\adversB$ (the NM advers) is enough to simulate $\SK_{\inner_i}^*$, we can then
-			have $\adversB$ invoke $\advers$ to produce, with non-negligible probability, $\FECT_\ell$.
-
-
-
-			% 1. First note that as we replaced $CT$ generation with the simulator, the only difference
-			% between what our adversary gets and the classic adversary gets is $\SK_{C_i}$.
-
-			% 2. We can then note that by sim sec and full graph replacement, we can replace the output of Ci(xi) with
-			% a cipher-text independent of $K$ for any non-queried ciphertexts. Thus, 
-			% we have that SKi gives no additional information????
-			% No...
-		\end{proof}
-	\end{lemma}
+	Finally, we can note that by the indistinguishably of $\Hyb_0$ and $\Hyb_5$,
+	\begin{equation*}
+		\Pr[\advers(\circNeigb, v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] 
+		\compInd
+		\Pr[\advers(\circNeigb', v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] 
+	\end{equation*}
+	where $\circNeigb'$ is $\circNeigb$ except that $\circNeigb'$ uses $\inner_i^p$ where $p = \max_{P \in \mathcal{P}} |P|$.
+	We can note that $\circNeigb'$ returns $\bot$ for any query on $\phi(K, w^v)$ where $w^v \in \Gamma^{-1}(v)$.
+	Using \cref{lem:NMIndepA}, we have that
+	$$
+		\Pr[\advers(\circNeigb', v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] \leq \negl(\lambda).
+	$$
 	
 \end{proof}
 
-% 1) the game
-% 2) we replace inner_i' with inner_i* in an inductive manner:
-% 		we start with the v_p' \in p' such that the adversary queries \inner(w) such that \Gamma(v_p') = v_p'
-% We then replace the next one after and then the one after until v
-% We can do this as the output of \inner_ is never queried on this path **and** the probability of an adversary getting in on this relation (finding this CT is small?)
-% Again, we must be careful here vis-a-vis the notion of non-malleability
-% First, we replace the first inner_i of p' because non-malleability is non-applicable here. If the advers never queries the full path, then there is a starting node from which they necessarily do not query
-% We can now note that, by sim-sec and the **restriction** on the advers, this works
-% 
-% Now, there is a question of how to do the **next** replacement. Indeed, we now need to say that because \inner* never outputs \phi(K, v_p')
-% we have that \inner* is independent of \phi(K, v_p') and thus can invoke the whole thing on non-malleability of FE.
-% Basically, because FE is non-malleable, the advers cannot generate \phi(K, v_p') and because we replace any call to inner_i with its simulated counterpart
-% We show that we can invoke the NM notion as Enc(m_1), ..., Enc(m_q) are not in the relation
-% Where m_1, ..., m_q are all the ciphertexts the advers has seen as outputs of \inner_i
-% 
-% 
-% and thus never queries \inner(\phi(K, v_p')) to get the next thing.
-% So again, we can replace outputs with bots. We do this repeatably until we replace output with bot for v
-% We then show that the probability of the advers guessing \phi(K, v) is indist from that without SK_i
-% We then have by NM that the probability of the advers guessing \phi(K, v) is small
+\begin{lemma}
+	\label{lem:hybrOneToFour}
+	$\Hyb_0 \compInd \Hyb_2$.	
+	\begin{proof}
+		First we show that $\Hyb_0 \compInd \Hyb_1$. Note that if $\advers$ can distinguish
+		between $\Hyb_0$ and $\Hyb_1$ then an adversary can distinguish between an FE scheme and its simulated counterpart
+		where $m$ is fixed to $(K, v_0, r)$.
+
+		Then, if $\advers$ can distribution $\Hyb_1$ and $\Hyb_2$, 
+		
+	\end{proof}
+\end{lemma}
 
 
-%%%%%%%%%%%%%% WRONG BELOW %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{lemma}
+		\label{lem:NMIndep}
+		Let $\advers$ be a PPT adversary and assume that we have a non-malleable and simulation secure
+		FE scheme. Then, we have that the inductive step of $\Hyb_3$ holds.
+		\begin{proof}
+			We construct an adversary $\adversB$ that can break NM security using $\advers$ if $\advers$ can distinguish between the hybrids
+			in the inductive step.
+			Note that in order to distinguish between the hybrids, $\advers$ must have queried $\inner^\ell_i$ or $\inner^\ell_{i + 1}$ on $\phi(K, w^u)$ where $u \in \set{\pathSuffix(P)_{\ell + 1} \mid P \in \mathcal{P}}$
+			as the this is the only difference between the hybrids.
+			Thus, we see that $\advers$ is able to produce to produce $\FECT \in \phi(K, w^u)$.
+			By definition of $\inner_i^\ell$ though, we know that $\inner_i^\ell(\phi(k, q)) \neq \phi(K, w^u)$
+			for any $q \in \verts$ as we define $\inner_i^\ell(K, q) = \bot$ if $\inner_i'(K, q) = \phi(K, w^u)$.
+			Thus, the adversary has to be able to produce $\FECT \in \phi(K, w^u)$ without calling $\circNeigb$.
 
-% \begin{lemma}
-% 	\begin{equation*}
-% 		\Pr[\advers(\Gamma, v_0, v, \labelFunc(K, v_0)) \in \imageFn(\labelFunc(K, v))] \leq \eps	
-% 	\end{equation*}
-% 	\begin{proof}{\;}
-% 		\begin{itemize}
-% 			\item We think of giving the ``null key" to the adversary. I.e.\ we give a func which always eval to null
-% 			\item We then replace $\phi$ with its FE simulated counterpart
-% 			\item We then say that $\labelFunc(K, v_0)^*$ is independent of $\labelFunc(K, v)$
-% 			b/c non-malleable
-% 			% TODO: see defn in these lectures https://www.cs.cornell.edu/courses/cs687/2006fa/lectures/lecture16.pdf
-% 		\end{itemize}
-% 		Assume that we can break the above hybrid. We then have that either break non-malleableness of you can find K
-% 	\end{proof}
-% \end{lemma}
+			Thus, if $\advers(w^u, v_0, \circNeigb, \phi(K, v_0))$ can produce $\FECT \in \phi(K, w^u)$,
+			we can have $\adversB(\phi(K, v_0), \phi(K, q_1), \dots,$ $ \phi(K,q_{\poly(\lambda)}))$ 
+			produce $\phi(K, w^u)$ where $q_1, \dots, q_{\poly(\lambda)}$ are all the vertices that $\advers$ has queried $\circNeigb$ on.
+			$\adversB$ simply has to invoke $\Sim_1$ to create a simulated set of function keys for $\inner_i$ for all $i \in [d]$
+			and can then simulate $\circNeigb$.
 
+			We can then have $\adversB$ invoke $\Sim_1$ to create a simulated function key for $\SK_{\inner_i}'$
+			and thus a simulated $\circNeigb'$.
+			$\adversB$ then gives $\advers$ $(w^u, v_0, \circNeigb', \phi(K, v_0))$.
+			we can then break \cref{eq:NMRel} as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator cannot.
+		\end{proof}
+\end{lemma}
 
+\begin{lemma}
+		\label{lem:NMIndepA}
+		Define $\circNeigb'$ where $\circNeigb'$ is defined as in \cref{alg:neighb} except that
+		for some set $U \subset \verts$, $\circNeigb(w^u)_i = \bot$ for all $w^u \in \verts$ such that $u = \Gamma(w^u)_i$ for some $u \in U$.
+		In words, the parent of all $u \in U$ do not return $\phi(K, u)$ when queried on $\circNeigb'$.
+		Then, assuming the non-malleability and simulation security of FE, we have that for all PPT $\advers$
+		and all $u \in U$,
+		\begin{equation}
+			\Pr[\advers(\circNeigb', v_0, u, U, \phi(K, v_0)) \in \imageFn(\phi(K, u))] \leq \negl(\lambda).
+		\end{equation}
+		\begin{proof}
+			We construct an adversary $\adversB$ that can break NM security using $\advers$ if $\advers$ can
+			produce $\FECT \in \phi(K, u)$ for some $u \in U$.
+			
+			If $\advers(w^u, v_0, \circNeigb, u, U, \phi(K, v_0))$ can produce $\FECT \in \phi(K, u)$,
+			we can have $\adversB(\phi(K, v_0), \phi(K, q_1), \dots,$ $ \phi(K,q_{\poly(\lambda)}))$ 
+			produce $\phi(K, u)$ where $q_1, \dots, q_{\poly(\lambda)}$ are all the vertices that $\advers$ has queried $\circNeigb'$ on.
+			$\adversB$ simply has to invoke $\Sim_1$ to create a simulated set of function keys for $\inner_i$ for all $i \in [d]$
+			and can then simulate $\circNeigb'$ with these function keys.
 
-% \begin{claim} 
-% 	\label{claim:sec}
-% 	\cref{eq:guessPhi} holds for any PPT adversary, $\adversB$ when $\circNeigb$ is implemented as in \cref{alg:neighb}.
-% \end{claim}
-% \begin{proof}[Proof of \cref{claim:sec}]
-% We proceed via a hybrid argument and then show that if there exists an adversary $\adversB$ that can beak \cref{eq:guessPhi},
-% then we can build an adversary $\advers$ which can distinguish between the hybrids.
-
-
-
-% % Assume that there exists a path from v_0 to v. Let all such paths be P.
-% % SAY THAT (definitionally) advers never queries a path from v_0 to v
-% % Then, we have to prove by induction that we cannot find v
-% % If advers does not know the path, then they do not query some subset of path \in P
-% % where the section is the path from u to v for some vertex u.
-% % Now, we can replace \inner_i(neighb u) with bot because advers (by definition) never queries u.
-% % Now, we need to show that finding \phi(K, u) is hard. We can do the simulation replacement as in the lemma
-% % But now, we have the "u" is isolated and independent of inner_i. Thus Pr[advers guesses phi(u), \phi(v_0), C_\Gamma] is about Pr[advers guesses phi(u), phi(v_0)] without gamma
-% % 
-% % Now, we have that advers never sees prior u on path. So, for next u, we can do a similar procedure as the above?
-% %
-
-% \begin{itemize}
-% 	\item $\Hyb_0$: Guess game. Win if guess
-% 	\item $\Hyb_1$: As the above but we replace $\phi(K, v_0)$ with its FE simulated counterpart
-% 	as in the above lemma
-% 	\item $\Hyb_2$: We replace $\inner_i$ ($\inner_i^*$) to output $\bot$ if it is supposed to output $v$
-% 	% Oh this may actually not work, we need to say that G^-1 is hard to find...
-% 	\item $\Hyb_3$: 
-
-% 	% \item $\Hyb_1$: As the RHS of the FE game
-% 	% \item $\Hyb_2$: As the above but we replace $\Pi_m = \big((\inner_1, \inner_1(v, K'), \dots, (\inner_d, \inner_d(v, K')\big)$
-% 	% for all $v \in \set{v_1, ..., v_p}$
-% 	% Secure b/c advers does not know path from u to v for any of these. Thus, C_Gamma(u) is independent of C_Gamma(v). So, all the different distributions are independent to the adversary
-% 	% eeesh idk
-% \end{itemize}
-
-% Now, note that if $\adversB$ can distinguish between \cref{eq:gameGRO}, then we can build adversary $\advers$ to distinguish between $\Hyb_0$ and $\Hyb_2$ by invoking $\adversB$ to distinguish
-% % Ohhhh wait, because C, C(m) ~ C(m'), the simulator generating ct_m, ct_m' are indistirnguishabl from each other
-% % Thus, Enc(ct_m) and Enc(ct_m') are indistinguishable from each other
-% \end{proof}
-
+			We can then have $\adversB$ invoke $\Sim_1$ to create a simulated function key for $\SK_{\inner_i}'$
+			and thus a simulated $\circNeigb^{*}$.
+			$\adversB$ then gives $\advers$ $(w^u, v_0, \circNeigb^{*}, \phi(K, v_0))$.
+			We can then break \cref{eq:NMRel} (this is supposed to be the NM relationship equation) as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator cannot.
+		\end{proof}
+\end{lemma}

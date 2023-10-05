@@ -54,7 +54,8 @@ m \leftarrow \advers^{S_1(\mathbf{st}_0)}(\MPK) \\
 \]
 
 Our modified security definition is as follows:
-\[
+\begin{equation}
+\label{eq:FEsec}
 \begin{aligned}
 	&\left\{
 		\begin{array}{l}
@@ -80,7 +81,7 @@ Our modified security definition is as follows:
 		\end{array}
 	\right\}_{\lambda \in \N}
 \end{aligned}
-\]
+\end{equation}
 
 we also copy th admissibility constraints of \cite{garg2022dynamic}:
 % TODO:!
@@ -151,7 +152,7 @@ such that
 	% TODO:  fix styling...
 	\label{eq:NMRel}
 	\bigg|\Pr&\left[NM(\{m\} , \advers(z) \in \bigcup_{m \in \{m\}} R(m)\right]- \\
-				\Pr&\left[\Sim_{NM}(1^n, z); m' = \FEDec(\SK_{\text{identity}}, c); m' \in \bigcup_{m \in \{m\}} R(m)\right]\bigg| \leq \negl(\lambda).
+				\Pr&\left[c \gets \Sim_{NM}(1^n, z); m' = \FEDec(\SK_{\text{identity}}, c); m' \in \bigcup_{m \in \{m\}} R(m)\right]\bigg| \leq \negl(\lambda).
 \end{align*}
 Note that in the above definition, we do not give the adversary access to any $\SK_{C_i}$.
 We simply require that the scheme is public key non-malleable.

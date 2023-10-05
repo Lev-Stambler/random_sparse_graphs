@@ -131,17 +131,15 @@ We can now define, $\circNeigb$.
 % \end{lemma}
 
 
-Now, we will prove \cref{eq:guessPhi}. For convenience, we will restate \cref{eq:guessPhi}:
-\begin{equation*}
-	\Pr[\advers(\circNeigb, v_0, v, \labelFunc(K, v_0)) \in \imageFn(\labelFunc(K, v))] \leq O(v)\eps
-\end{equation*}
-for all PPT $\advers$.
+% Now, we will prove \cref{eq:guessPhi}. For convenience, we will restate \cref{eq:guessPhi}:
+% \begin{equation*}
+% 	\Pr[\advers(\circNeigb, v_0, v, \labelFunc(K, v_0)) \in \imageFn(\labelFunc(K, v))] \leq O(v)\eps
+% \end{equation*}
+% for all PPT $\advers$.
 
 \begin{proof}[Proof of \cref{eq:guessPhi}]
-	Let $P$ be the set of all paths from $v_0$ to $v$. Then, as the adversary does not know any path from $v_0$ to $v$,
-	we have that for each $p \in P$ where $p = v_0, \dots, v$, there is some suffix of $p$, $p'$, which the adversary does not know.
-
-	We are going to use a similar proof technique as in \cref{lem:findK} where we use a hybrid argument.
+	We are going to use layout a series of indistinguishable hybrids and then use non-malleability of FE
+	along with the last hybrid to show that \cref{eq:guessPhi} holds.
 	\begin{itemize}
 		\item $\Hyb_0$: In the first hybrid, the following game is played
 			\begin{enumerate}
@@ -294,7 +292,11 @@ for all PPT $\advers$.
 			We can then have $\adversB$ invoke $\Sim_3$ to create a simulated function key for $\SK_{\inner_i}'$
 			and thus a simulated $\circNeigb^{*}$.
 			$\adversB$ then gives $\advers$ $(w^u, v_0, \circNeigb^{*}, \phi(K, v_0))$.
-			We can then break \cref{eq:NMRel} (the relational notion of security for non-malleability) as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator 
+			If we define the relation $R$ to break in \cref{eq:NMRel} to be $R(K, v_0, r) = \set{(K, v, r*) : \forall r^* \gets \set{0, 1}^\lambda}$,
+			we can then break \cref{eq:NMRel} (the relational notion of security for non-malleability).
+			We can see this as $\advers$ is able to create an encryption of $\phi(K, w^u)$
+			given encryptions of $\phi(K, q_1), \dots, \phi(K, q_{\poly(\lambda)})$
+			with non-negligible probability while the simulator 
 			in \cref{eq:NMRel} cannot.
 		\end{proof}
 \end{lemma}

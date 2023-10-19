@@ -56,7 +56,8 @@ a graph cut which separates $v_0$ and $v$. Then, we inductively build up a serie
 $\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are the vertices on the right-hand side of the cut.
 
 % TODO: define P way above
-\begin{lemma}
+\begin{lemma}[Base Case Game]
+	\label{lemma:cutBaseCase}
 	Assuming that there is no extractor $E$ such that $\Pr[E(\Gamma, v_0, v) = P] \geq \frac{1}{p(\lambda)}$
 	where $P \in \pathSet$, then for any PPT $\advers$, there exists some graph cut 
 	$C_E \subset E$ which separates $v_0$ and $v$ and a set $C_V$ such that
@@ -97,10 +98,72 @@ $\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are t
 	\end{proof}
 \end{lemma}
 
+We can look at \cref{lemma:cutBaseCase} as a ``base case'' of sorts. We now inductively build up a series of games
+such that $\advers$ cannot find any label in $V_1$ where $V_1$ are the vertices on side of the cut (as defined in \cref{lemma:cutBaseCase})
+which contain $v$.
+
+\begin{lemma}[Inductive Game Hypothesis]
+	Let $H \subset V$ be a ``hard'' set of vertices such that $\advers$ cannot, with non-negligible probability, produce 
+	$\phi(K, h)$ where $h \in H$. Note that the base case has $H = C_V$. Then, 
+	for any $v \notin H$ and $w \in \Gamma(h)$ for all $h \in H$, we have that
+	\begin{equation*}
+		% TODO: change all to just <
+		% TODO: maybe we nee to fix \eps
+		\Pr[\advers(\obfFN(\circNeigb), v_0, w, \phi(K, v_0)) = \phi(K, w)] < \negl(\lambda).
+	\end{equation*}
+	\begin{proof}
+		We are going to use a series of indistinguishable hybrids along with the circuit defined in \ref{alg:neighbHyb1} to show the above
+		\begin{itemize}
+			\item $\Hyb_0$: In the first hybrid, the following game is played
+				\begin{enumerate}
+					\item $K \gets \binSet^{\lambda'}$ and $\phi(K, v_0) = (F(K, v_0), v)$ where $K$ is some fixed secret drawn from a random distribution
+					\item The challenger generates $\mathcal{O}(\circNeigb)$ and gives the program to $\advers$
+					\item The challenger gives the adversary $w^*$ in plaintext.
+					\item $\advers$ outputs guess $g$ and wins if $g = \phi(K, w^*)$ %hmmm... do we give w?
+				\end{enumerate}
+			
+			\item $\Hyb_1$: We replace $\circNeigb$ with $\circNeigb^{w^*}$ as defined in \ref{alg:neighbHyb1}.
+			Fix the constant $z^* = f(F(K, w^*))$
+			% and $y^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, y^*_d = f(F(K, \Gamma(w^*)_d))$.
+
+			\item $\Hyb_2$: Set $z^* = f(t)$ where $t$ is chosen at random %TODO: specify field size
+		\end{itemize}
+		Finally, we can note that if $\Hyb_0 \compInd \Hyb_2$,
+		\begin{equation*}
+			\Pr[\advers(\circNeigb, v_0, w, \phi(K, v_0)) = \phi(K, w)] 
+			\compInd
+			\Pr[\advers(\circNeigb^*, v_0, w, \phi(K, v_0)) = \phi(K, w)]
+		\end{equation*}
+		where $z^*$ in $\circNeigb^*$	is the image on a OWF of a randomly chosen point.
+		Thus, if $\advers$ can produce $\phi(K, v) = (\sigma_v, v)$, then $\advers$
+		can find a preimage for $z*$ under $f$ and thus break the security of a one way function.
+
+		We prove the indistinguishably of the hybrids in \cref{lemma:hybA} and \cref{lemma:hybB}.
+	\end{proof}
+\end{lemma}
+
+% Hmmmmm we can still not fully use eO correctly, there may be more than one
+% input which messes us up...
+% I guess that we can simply **require** each vertex to have a polynomial number of inputs...
+% Hmmm... also still need to see if DAGs are required!
+% Maybe to remove DAG we have two functions with different proofs?: 1 on the way forward
+% and 1 on the way "backwards"
+% TODO: for now j assume DAG with limited (poly) number of inputs
+
+\begin{lemma}
+	\label{lemma:hybA}
+	AAA
+\end{lemma}
+
+\begin{lemma}
+	\label{lemma:hybB}
+	AAA
+\end{lemma}
+
 \begin{algorithm}[H]
 	\caption{
 		Circuit for the neighbor function, $\circNeigb^{w^*, \Gamma(w^*)_1, \dots, \Gamma(w^*)_d}$ with punctured PRF key
-		$K(\set{w^*})$ and constant $z^*, z^*_1, z^*_2, \dots, z^*_d$
+		$K(\set{w^*})$ and constant $z^*$%, y^*_1, y^*_2, \dots, y^*_d$
 	}
 	\begin{algorithmic}[1]
 		\Function{$\circNeigb$}{$f(\sigma_v), v$}
@@ -113,87 +176,22 @@ $\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are t
 		 	\If{$\Gamma(v) = \emptyset$}
 				\State \Return $\bot$
 			\EndIf
-			\If{$v = w$}
-				\State \Return $z^*_1, z^*_2, \dots, z^*_d$
-			\EndIf
+			% \If{$v = w$}
+			% 	\State \Return $z^*_1, z^*_2, \dots, z^*_d$
+			% \EndIf
 			\State $u_1, \dots u_d = \Gamma(v)$
-			\State \Return $f(F(K, u_1)), f(F(K, u_2)), \dots, f(F(K, u_d))$
+			\If{For some $j \in [d]$, $u_j = w^*$}
+				% Hmmm cannot *actually* return the punctured point
+				% Maybe need to use weak eO here...
+			 	\State Set $F(K, u_j) = \bot$
+			\EndIf
+			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
 		\EndFunction
 	\end{algorithmic}
 	\label{alg:neighbHyb1}
 \end{algorithm}
 
  
-
-
-
-	We are going to use a series of inductively built indistinguishable hybrids along with \cref{alg:neighbHyb1}
-	to show that \cref{eq:guessPhi} holds.
-	\begin{itemize}
-		\item $\Hyb_0$: In the first hybrid, the following game is played
-			\begin{enumerate}
-				\item $K \randomGet \binSet^{\lambda'}$ and $\phi(K, v_0) = (F(K, v_0), v)$
-				\item The challenger generates $\mathcal{O}(\circNeigb)$ and gives the program to $\advers$
-				\item The challenger chooses a $v$ and gives the adversary $v$ in plaintext.
-				\item $\advers$ outputs guess $g$ and wins if $g = \phi(K, v)$
-			\end{enumerate}
-		
-		\item $\Hyb_1$: Let $\mathcal{P}$ be the set of all paths from $v_0$ to $v$. For each path $P \in \mathcal{P}$
-		where $P$ is an ordered list of connected vertices, we have that the adversary does not know
-		some part of $P$.
-		We can note that this implies that $\advers$ does not know $\phi(K, p)$ for all $p \in P$ as then
-		$\advers$ can recover $P$. Let $u_P$ be the first vertex in $P$ such that $\advers$ does not know 
-		\emph{a path} from $v_0$ to $u_P$. Define $\pathSuffix'(P)$ to be the path in $P$ from this $u_P$ to $v$.
-		Then, necessarily, $\advers$ does not know $\phi(K, w_P)$ for at least one $w_P \in \pathSuffix'(P)$
-		as then $\advers$ would know a path from $v_0$ to $v$. Now, let $\pathSuffix(P)$ be the path which starts at $w_P$, ends at $v$.
-
-		We now inductively build up a series of hybrids to show that a hybrid distribution
-		which shows $\phi(K, s)$ for $s \in \pathSuffix(P)$ indistinguishable from random.
-		We perform the following procedure for each $P \in \mathcal{P}$. So, for $P \in \mathcal{P}$,
-		
-		\begin{enumerate}
-			\item For the base case, 
-			let $U = \pathSuffix(P)_1$
-			where $\pathSuffix(P)_1$ is the first vertex in $P$ such that $\advers$ does not know $\phi(K, p)$ for $p \in P$.
-				\begin{enumerate}[label=(\alph*)]
-					\item Set $w^* = p$. Then, replace $\circNeigb$ with $\circNeigb^{w^*, \Gamma(w^*)_1, \dots, \Gamma(w^*)_d}$ as defined in \cref{alg:neighbHyb1}.
-					Fix the constant $z^* = f(F(K, p))$ and $z^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, z^*_d = f(F(K, \Gamma(w^*)_d))$.
-					\item Set $z^* = f(t), z^*_1 = f(t_1), \dots z^*_d = f(t_d)$ where $t, t_1, \dots, t_d$ are chosen at random %TODO: specify field size
-					% TODO: we want to **in the game** have the advantage be for guessing **any** for the points in \mathcal{P}...
-					% Then reduce advantage to breaking PRF security...
-				\end{enumerate}
-			% TODO: need to show that the adversary does not know \phi(K, w^u)' where this is a different encryption
-			% of \phi(K, w^u) than one seen in a path
-			\item For the $\ell$-th inductive step where $1 \leq \ell < |\pathSuffix(P)|$, we are going to assume that we are given a hybrid such that 
-			$w^* = \pathSuffix(P)_{\ell}$ and $z^* = f(t), z^*_1 = f(t_1), \dots z^*_d = f(t_d)$ for random $t, \dots t_d$ in \cref{alg:neighbHyb1}.
-			Now, we change the hybrid in a similar manner as in the base case:
-			\begin{enumerate}[label=(\alph*)]
-				% This hyb is indisting from the first one and thus holds (assuming the last ones held)
-				\item Set $w^* = \pathSuffix(P)_{\ell + 1}$. Then, replace $\circNeigb$ with $\circNeigb^{w^*, \Gamma(w^*)_1, \dots, \Gamma(w^*)_d}$ as defined in \cref{alg:neighbHyb1}.
-				Fix the constant $z^* = f(F(K, p))$ and $z^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, z^*_d = f(F(K, \Gamma(w^*)_d))$.
-				% This hyb holds by the inductive hypothesis + OWF security again
-				% I.e. induc hypothesis says that we cannot forge a signature for any of the prior points
-				% Then, we cannot forge this signature!!
-				\item Set $z^* = f(t), z^*_1 = f(t_1), \dots z^*_d = f(t_d)$ where $t, t_1, \dots, t_d$ are chosen at random %TODO: specify field size
-			\end{enumerate}
-			to puncture on $\pathSuffix(P)_{\ell + 1}$ where we update $z^*, \dots z^*_d$ 
-			with new randomness.
-			
-% TODO: knowing implies extracting implies hybrid BaseCase (2) holds by forging security!! (A cannot forge simply as that implies an extractor for (\phi(K, u), u)
-% Knowing impl
-		\end{enumerate}
-	\end{itemize}
-	Finally, we can note that if $\Hyb_0 \compInd \Hyb_1$,
-	\begin{equation*}
-		\Pr[\advers(\circNeigb, v_0, v, \phi(K, v_0)) = \phi(K, v)] 
-		\compInd
-		\Pr[\advers(\circNeigb^*, v_0, v, \phi(K, v_0)) = \phi(K, v)]
-	\end{equation*}
-	where $z^*$ in $\circNeigb^*$	is the image on a OWF of a randomly chosen point.
-	Thus, if $\advers$ can produce $\phi(K, v) = (\sigma_v, v)$, then $\advers$
-	can find a preimage for $z*$ under $f$ and thus break the security of a one way function.
-
-	Now, we show that $\Hyb_0 \compInd \Hyb_1$.
 
 	\begin{lemma}
 		The game in $\Hyb_1 (1a)$ is indistinguishable from $\Hyb_0$.

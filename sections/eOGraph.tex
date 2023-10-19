@@ -1,6 +1,8 @@
 \newcommand{\labelFunc}{\phi}
 \newcommand{\imageFn}{\text{Image}}
 \newcommand{\pathSuffix}{\text{Suff}}
+\newcommand{\pathSet}{\mathcal{P}}
+\newcommand{\obfFN}{\mathcal{O}}
 
 \section{Using Weak Extractible Obfuscation}
 
@@ -22,7 +24,7 @@ and, $\mathcal{O}$ represents an indistinguishable obfuscator.
 \subsection{Instantiation}
 We define 
 \begin{equation*}
-	\labelFunc(K, v) = (F(K, v), v).
+	\labelFunc(K, v) = F(K, v).
 \end{equation*}
 For shorthand, we will write $\sigma_v$ to connote an attempted ``signature'' of $v$
 where a correct signature is $F(K, v)$.
@@ -46,6 +48,54 @@ We can now define $\circNeigb$:
 	\end{algorithmic}
 	\label{alg:neighb}
 \end{algorithm}
+
+We are going to show that \cref{eq:guessPhi} holds by first showing that
+the non-existence of an extractor to find a path from $v_0$ to $v$ implies that $\advers$
+necessarily does not know $\phi(K, c)$ for a $c \in C_V \subset V$ where the vertices in $C_V$ border 
+a graph cut which separates $v_0$ and $v$. Then, we inductively build up a series of games to show that
+$\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are the vertices on the right-hand side of the cut.
+
+% TODO: define P way above
+\begin{lemma}
+	Assuming that there is no extractor $E$ such that $\Pr[E(\Gamma, v_0, v) = P] \geq \frac{1}{p(\lambda)}$
+	where $P \in \pathSet$, then for any PPT $\advers$, there exists some graph cut 
+	$C_E \subset E$ which separates $v_0$ and $v$ and a set $C_V$ such that
+	\begin{equation}
+		\label{eq:cutLabel}
+		\Pr[\advers(\obfFN(\circNeigb), v_0, v, \phi(K, v_0)) \in \phi(K, C_V)] \leq \negl(\lambda).
+	\end{equation}
+		We define $C_V \subset V$ to be
+	\begin{equation*}
+		\set{ u \mid (w, u) \in C_E \text{ and } u \text { on the side of } v} \bigcup \set{ v \mid (w, u) \in C_E \text{ and } u \text { on the side of } v}.
+	\end{equation*}
+	In words, $C_V$ are the vertices just adjacent to the cut and on the same side as $v$.
+	\begin{proof}
+		We will show that if $\advers$ can break \cref{eq:cutLabel}, then we can construct an extractor,
+		$E$, which finds a path from $v_0$ to $v$ with non-negligible probability.
+
+		Assume that for every possible cut, $\advers$ is able to produce a single label in this cut for a vertex $w$.
+		Then, we note that there must be at least 1 path from $v_0$ to $w$ and $v$ as otherwise, $w$ would not be in the cut.
+		Moreover, we note that $\advers$ must be able to produce a label for all vertices on at least one path
+		from $v_0$ to $w$ as otherwise, we can change the cut to include the edges between where
+		$\advers$ is able to produce a label and not able to produce a label. Using the same argument,
+		we can show that $\advers$ must be able to produce all labels on a path from $w$ to $v$.
+
+		Note that $\advers$ is not given the specific cut $C_E$ but rather $C_E$ is chosen based off of the adversary.
+		So, we can build an extractor to do the following:
+		% TODO: is this selective security?????
+		\begin{enumerate}
+			\item Create an iO obfuscated circuit with a random key, $K'$, for $\circNeigb$ and create circuit $\obfFN(\circNeigb)$
+			as well as $\phi(K', v_0)$
+			\item Run $\advers(\obfFN(\circNeigb), v_0, v, \phi(K', v_0))$ to get all labels $\phi(K', v_0), \dots \phi(K', v)$
+			for some path from $v_0$ to $v$.
+			\item Recreate the path from $v_0$ to $v$ via checking which vertex matches to adjacent labels in the path:
+			% TODO: this assumes no cycles!!!
+			I.e.\ starting with $\ell = 0$, we can learn the $\ell + 1$ vertex via finding $j \in [d]$ such that
+			$\circNeigb(\phi(K', v_\ell), v_\ell)_j \in \set{\phi(K', v_0), \dots, \phi(K', v)}$
+			 and then setting $v_{\ell + 1} = \Gamma(v_\ell)_j$.
+		\end{enumerate}
+	\end{proof}
+\end{lemma}
 
 \begin{algorithm}[H]
 	\caption{
@@ -73,7 +123,10 @@ We can now define $\circNeigb$:
 	\label{alg:neighbHyb1}
 \end{algorithm}
 
-\begin{proof}[Proof of \cref{eq:guessPhi}]
+ 
+
+
+
 	We are going to use a series of inductively built indistinguishable hybrids along with \cref{alg:neighbHyb1}
 	to show that \cref{eq:guessPhi} holds.
 	\begin{itemize}
@@ -98,11 +151,11 @@ We can now define $\circNeigb$:
 		which shows $\phi(K, s)$ for $s \in \pathSuffix(P)$ indistinguishable from random.
 		We perform the following procedure for each $P \in \mathcal{P}$. So, for $P \in \mathcal{P}$,
 		
-		\begin{itemize}
+		\begin{enumerate}
 			\item For the base case, 
 			let $U = \pathSuffix(P)_1$
 			where $\pathSuffix(P)_1$ is the first vertex in $P$ such that $\advers$ does not know $\phi(K, p)$ for $p \in P$.
-				\begin{enumerate}
+				\begin{enumerate}[label=(\alph*)]
 					\item Set $w^* = p$. Then, replace $\circNeigb$ with $\circNeigb^{w^*, \Gamma(w^*)_1, \dots, \Gamma(w^*)_d}$ as defined in \cref{alg:neighbHyb1}.
 					Fix the constant $z^* = f(F(K, p))$ and $z^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, z^*_d = f(F(K, \Gamma(w^*)_d))$.
 					\item Set $z^* = f(t), z^*_1 = f(t_1), \dots z^*_d = f(t_d)$ where $t, t_1, \dots, t_d$ are chosen at random %TODO: specify field size
@@ -113,7 +166,8 @@ We can now define $\circNeigb$:
 			% of \phi(K, w^u) than one seen in a path
 			\item For the $\ell$-th inductive step where $1 \leq \ell < |\pathSuffix(P)|$, we are going to assume that we are given a hybrid such that 
 			$w^* = \pathSuffix(P)_{\ell}$ and $z^* = f(t), z^*_1 = f(t_1), \dots z^*_d = f(t_d)$ for random $t, \dots t_d$ in \cref{alg:neighbHyb1}.
-			Now, we change the hybrid in a similar manner as in the base case: \begin{enumerate}
+			Now, we change the hybrid in a similar manner as in the base case:
+			\begin{enumerate}[label=(\alph*)]
 				% This hyb is indisting from the first one and thus holds (assuming the last ones held)
 				\item Set $w^* = \pathSuffix(P)_{\ell + 1}$. Then, replace $\circNeigb$ with $\circNeigb^{w^*, \Gamma(w^*)_1, \dots, \Gamma(w^*)_d}$ as defined in \cref{alg:neighbHyb1}.
 				Fix the constant $z^* = f(F(K, p))$ and $z^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, z^*_d = f(F(K, \Gamma(w^*)_d))$.
@@ -127,109 +181,56 @@ We can now define $\circNeigb$:
 			
 % TODO: knowing implies extracting implies hybrid BaseCase (2) holds by forging security!! (A cannot forge simply as that implies an extractor for (\phi(K, u), u)
 % Knowing impl
-		\end{itemize}
+		\end{enumerate}
 	\end{itemize}
-	Finally, we can note that if $\Hyb_0 \compInd \Hyb_3$,
+	Finally, we can note that if $\Hyb_0 \compInd \Hyb_1$,
 	\begin{equation*}
-		\Pr[\advers(\circNeigb, v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] 
+		\Pr[\advers(\circNeigb, v_0, v, \phi(K, v_0)) = \phi(K, v)] 
 		\compInd
-		\Pr[\advers(\circNeigb', v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] 
+		\Pr[\advers(\circNeigb^*, v_0, v, \phi(K, v_0)) = \phi(K, v)]
 	\end{equation*}
-	where $\circNeigb'$ is $\circNeigb$ except that $\circNeigb'$ uses $\inner_i^p$ where $p = \max_{P \in \mathcal{P}} |P|$.
-	We can note that $\circNeigb'$ returns $\bot$ for any query on $\phi(K, w^v)$ where $w^v \in \Gamma^{-1}(v)$.
-	Using \cref{lem:NMIndepA} and the fact that $\circNeigb'(u)_i$ returns $\bot$ for all $u \in \verts$ and $i \in [d]$ where $v = \Gamma(u)_i$, we have that
-	$$
-		\Pr[\advers(\circNeigb', v_0, v, \phi(K, v_0)) \in \imageFn(\phi(K, v))] \leq \negl(\lambda).
-	$$
+	where $z^*$ in $\circNeigb^*$	is the image on a OWF of a randomly chosen point.
+	Thus, if $\advers$ can produce $\phi(K, v) = (\sigma_v, v)$, then $\advers$
+	can find a preimage for $z*$ under $f$ and thus break the security of a one way function.
+
+	Now, we show that $\Hyb_0 \compInd \Hyb_1$.
+
+	\begin{lemma}
+		The game in $\Hyb_1 (1a)$ is indistinguishable from $\Hyb_0$.
+		\begin{proof}
+			As the functionality of $\circNeigb$ in $\Hyb_0$ equals that of $\Hyb_1 (1a)$,
+			we have indistinguishable simply from the definition of indistinguishable obfuscation.
+		\end{proof}
+	\end{lemma}
+
+	\begin{lemma}
+		The game in $\Hyb_1 (1b)$ is indistinguishable from $\Hyb_1 (1a)$.
+		\begin{proof}
+			Here we argue that if the game in $\Hyb_1 (1b)$ is distinguishable from
+			$\Hyb_1 (1a)$, then we can construct an adversary, $\adversB$, which can break the security of the PRF
+			at the punctured point. 
+
+			% TODO: wait is this trivial??? Like just use the extractor definition???
+			% But then wait, something is not right here
+			% Something 
+
+			% TODO: change game
+		\end{proof}
+	\end{lemma}
+
+	\begin{lemma}
+		The game in $\Hyb_1 (2a)$ is indistinguishable from $\Hyb_0$ and, by the inductive hypothesis, all previous hybrids.
+		\begin{proof}
+			Again, we have that the circuit for $\circNeigb$ is the same in $\Hyb_0$ and $\Hyb_1 (2a)$.
+			Thus, by the definition of indistinguishable obfuscation, these games are indistinguishable.
+		\end{proof}
+	\end{lemma}
+
+	\begin{lemma}
+		The game in $\Hyb_1 (2b)$ is indistinguishable from $\Hyb_1 (2a)$ and, by the inductive hypothesis, all previous hybrids.
+		\begin{proof}
+			TODO: PRF security + extractor part
+		\end{proof}
+	\end{lemma}
+
 	
-\end{proof}
-
-\begin{lemma}
-	\label{lem:hybrOneToFour}
-	$\Hyb_0 \compInd \Hyb_{2b}$.	
-	\begin{proof}
-		First we show that $\Hyb_0 \compInd \Hyb_1$. Note that if $\advers$ can distinguish
-		between $\Hyb_0$ and $\Hyb_1$ then an adversary can distinguish between an FE scheme and its simulated counterpart
-		where $m$ is fixed to $(K, v_0, r)$. We can see this as $\Hyb_1$ is  direct simulation of the FE scheme.
-
-		Then, if $\advers$ can distinguish $\Hyb_1$ and $\Hyb_{2a}$, then we can break the security of the $\PRG$ used in line \ref{alg:neighb:prg} of \cref{alg:neighb}.
-		We can create an adversary $\adversB$ which, for some fixed $K$, distinguishes between $\FEEnc(\MPK, (K, u, r_2))$ with random coins $r_1$ where $r_1, r_2 = \PRG(r)$
-		and $\FEEnc(\MPK, (K, u, r_1^*))$ encrypted with random coins $r_2^*$ where $r_1^*, r_2^*$ are truly random.
-
-		Then, if $\advers$ can distinguish any transformation from $\Hyb_{2a}$ to $\Hyb_{2b}$, then we can break the security of the FE scheme.
-		We can see this by noting that if we fix $m = (K, w, r)$ for random $r$ and $K$,
-		then $\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$ is distinguishable
-		and $\advers^{\Sim_3^{u_m(\cdot)}}(\FECT')$ where $\FECT$ is the real cipher-text and $\FECT'$ is simulated.
-		We can then note that if the above are distinguishable, then
-		$\advers^{\text{KeyGen}(\MSK, \set{\inner_1, \dots \inner_d})}(\FECT)$ 
-		and $\advers^{\Sim_3^{u_m(\cdot)}}(\FECT')$ are distinguishable
-		as $\advers^{\text{KeyGen}(\MSK, \set{\inner_1, \dots \inner_d})}$ can simply simulate
-		$\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$.
-
-		Then, if $\advers$ can distinguish any transformation from $\Hyb_{2b}$ to $\Hyb_{2a}$, then we can break the security of a PRG
-		in the same manner as distinguishing $\Hyb_1$ and $\Hyb_{2a}$.
-
-		By the chain rule, we get that $\Hyb_0$ and $\Hyb_{2b}$ are indistinguishable even after a repeated
-		number of sequential invocations of the transformation in $\Hyb_{2a}$ and $\Hyb_{2b}$.
-	\end{proof}
-\end{lemma}
-
-
-\begin{lemma}
-		\label{lem:NMIndep}
-		Let $\advers$ be a PPT adversary and assume that we have a non-malleable and simulation secure
-		FE scheme. Then, we have that the inductive step of $\Hyb_3$ holds.
-		\begin{proof}
-			We construct an adversary $\adversB$ that can break NM security using $\advers$ if $\advers$ can distinguish between the hybrids
-			in the inductive step.
-			Note that in order to distinguish between the hybrids, $\advers$ must have queried $\inner^\ell_i$ or $\inner^\ell_{i + 1}$ on $\phi(K, w^u)$ where $u \in \set{\pathSuffix(P)_{\ell + 1} \mid P \in \mathcal{P}}$
-			as this is the only difference between the hybrids.
-			Thus, we see that $\advers$ is able to produce $\FECT \in \phi(K, w^u)$.
-			By definition of $\inner_i^\ell$ though, we know that $\inner_i^\ell(\phi(k, q)) \neq \phi(K, w^u)$
-			for any $q \in \verts$ as we define $\inner_i^\ell(K, q) = \bot$ if $\inner_i'(K, q) = \phi(K, w^u)$.
-			Thus, the adversary has to be able to produce $\FECT \in \phi(K, w^u)$ without calling $\circNeigb^\ell$
-			where $\circNeigb^\ell$ uses $\inner_i^\ell$ instead of $\inner_i$.
-
-			Thus, if $\advers(w^u, v_0, \circNeigb, \phi(K, v_0))$ can produce $\FECT \in \phi(K, w^u)$,
-			we can have $\adversB(\phi(K, v_0), \phi(K, q_1), \dots,$ $ \phi(K,q_{\poly(\lambda)}))$ 
-			produce $\phi(K, w^u)$ where $q_1, \dots, q_{\poly(\lambda)}$ are all the vertices that $\advers$ has queried $\circNeigb$ on.
-			$\adversB$ simply has to invoke $\Sim_3$ to create a simulated function key for $\SK_{\inner_i}'$
-			and thus a simulated $\circNeigb'$.
-			$\adversB$ then gives $\advers$ $(w^u, v_0, \circNeigb', \phi(K, v_0))$.
-			$\adversB$ then breaks \cref{eq:NMRel} (the relational notion of non-malleability) as $\advers$ is able to create an encryption of $\phi(K, w^u)$ with non-negligible probability while the simulator 
-			in \cref{eq:NMRel} cannot.
-		\end{proof}
-\end{lemma}
-
-\begin{lemma}
-		\label{lem:NMIndepA}
-		Define $\circNeigb'$ where $\circNeigb'$ is defined as in \cref{alg:neighb} except that
-		for some set $U \subset \verts$, $\circNeigb(w^u)_i = \bot$ for all $w^u \in \verts$ such that $u = \Gamma(w^u)_i$ for some $u \in U$.
-		In words, the parent of all $u \in U$ do not return $\phi(K, u)$ when queried on $\circNeigb'$.
-		Then, assuming the non-malleability and simulation security of FE, we have that for all PPT $\advers$
-		and all $u \in U$,
-		\begin{equation}
-			\Pr[\advers(\circNeigb', v_0, u, U, \phi(K, v_0)) \in \imageFn(\phi(K, u))] \leq \negl(\lambda).
-		\end{equation}
-		\begin{proof}
-			Almost identically to \cref{lem:NMIndep}, we construct an adversary $\adversB$ that can break NM security using $\advers$ if $\advers$ can
-			produce $\FECT \in \phi(K, u)$ for some $u \in U$.
-			
-			If $\advers(w^u, v_0, \circNeigb', u, \phi(K, v_0))$ can produce $\FECT \in \phi(K, u)$,
-			we can have $\adversB(\phi(K, v_0), \phi(K, q_1), \dots,$ $ \phi(K,q_{\poly(\lambda)}))$ 
-			produce $\phi(K, u)$ where $q_1, \dots, q_{\poly(\lambda)}$ are all the vertices that $\advers$ has queried $\circNeigb'$ on.
-			$\adversB$ simply has to invoke $\Sim_3$ to create a simulated set of function keys for $\inner_i'$ for all $i \in [d]$
-			and can then simulate $\circNeigb'$ with these function keys.
-
-			We can then have $\adversB$ invoke $\Sim_3$ to create a simulated function key for $\SK_{\inner_i}'$
-			and thus a simulated $\circNeigb^{*}$.
-			$\adversB$ then gives $\advers$ $(w^u, v_0, \circNeigb^{*}, \phi(K, v_0))$.
-			If we define the relation $R$ to break in \cref{eq:NMRel} to be $R(K, v_0, r) = \set{(K, v, r*) : \forall r^* \gets \set{0, 1}^\lambda}$,
-			we can then break \cref{eq:NMRel} (the relational notion of security for non-malleability).
-			We can see this as $\advers$ is able to create an encryption of $\phi(K, w^u)$
-			given encryptions of $\phi(K, q_1), \dots, \phi(K, q_{\poly(\lambda)})$
-			with non-negligible probability while the simulator 
-			in \cref{eq:NMRel} cannot.
-		\end{proof}
-\end{lemma}
-

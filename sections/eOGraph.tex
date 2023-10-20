@@ -3,31 +3,38 @@
 \newcommand{\pathSuffix}{\text{Suff}}
 \newcommand{\pathSet}{\mathcal{P}}
 \newcommand{\obfFN}{\mathcal{O}}
+\newcommand{\circMid}{C^{\text{Mid}}}
 
 \section{Using Weak Extractible Obfuscation}
 
 \subsection{Graph Randomized Traversal}
 Say that we have a sparse, potentially exponentially sized, graph $\graph = (\verts, \edges)$
-and $\forall v \in \verts, \deg(v) = d$.
+and $\forall v \in \verts, \deg(v) = d$. Moreover, if the graph is a DAG, for simplicity,
+assume that for all $v$, 
+$$
+\deg^{-1}(v) = \big|\set{u \in V \mid \exists j \in [d], \Gamma(u)_j = v}\big| \leq d.
+$$
+In words, there are at most $d$ edges into a vertex. As a note, our construction just requires
+that $\deg^{-1}(\cdot) = O(1)$ but for the sake of simplicity we fix $\deg^{-1}(\cdot) \leq d$.
+
 We also require that $\graph$ is equipped with a neighbor function, $\Gamma$, which can be computed in polynomial time.
 % (TODO: padding).
 We define a randomized and keyed labelling function $\phi: \binSet^\lambda \times \verts \rightarrow \binSet^{\poly(\lambda)}$ 
 such that given, $\phi(K, v_0)$ for root $v_0$, an adversary, $\advers$, which does not know a path from $v_0$ to $v$,
 \begin{equation}
 	\label{eq:guessPhi}
-	\Pr[\advers(\mathcal{O}(\circNeigb), v_0, v, \labelFunc(K, v_0)) = \labelFunc(K, v)] \leq \negl(\lambda)
+	\Pr[\advers(\mathcal{O}(\circNeigb), v_0, v, \labelFunc(K, v_0)) = \labelFunc(K, v)] \leq \epsilon
 \end{equation}
 for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$
 if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string;
 and, $\mathcal{O}$ represents an indistinguishable obfuscator.
+We fix $\epsilon \leq \negl(\lambda)$.
 
 \subsection{Instantiation}
 We define 
 \begin{equation*}
 	\labelFunc(K, v) = F(K, v).
 \end{equation*}
-For shorthand, we will write $\sigma_v$ to connote an attempted ``signature'' of $v$
-where a correct signature is $F(K, v)$.
 
 We can now define $\circNeigb$:
 \begin{algorithm}[H]
@@ -35,15 +42,15 @@ We can now define $\circNeigb$:
 		The circuit for the neighbor function, $\circNeigb$.
 	}
 	\begin{algorithmic}[1]
-		\Function{$\circNeigb$}{$f(\sigma_v), v$}
-			\If{$f(\sigma_v) \neq f(F(K, v))$}
+		\Function{$\circNeigb$}{$X, v$}
+			\If{$f(X) \neq f(F(K, v))$}
 				\State \Return $\bot$
 			\EndIf
 		 	\If{$\Gamma(v) = \emptyset$}
 				\State \Return $\bot$
 			\EndIf
 			\State $u_1, \dots u_d = \Gamma(v)$
-			\State \Return $f(F(K, u_1)), f(F(K, u_2)), \dots, f(F(K, u_d))$
+			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
 		\EndFunction
 	\end{algorithmic}
 	\label{alg:neighb}
@@ -125,8 +132,14 @@ which contain $v$.
 			\item $\Hyb_1$: We replace $\circNeigb$ with $\circNeigb^{w^*}$ as defined in \ref{alg:neighbHyb1}.
 			Fix the constant $z^* = f(F(K, w^*))$
 			% and $y^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, y^*_d = f(F(K, \Gamma(w^*)_d))$.
-
-			\item $\Hyb_2$: Set $z^* = f(t)$ where $t$ is chosen at random %TODO: specify field size
+			\item $\Hyb_{2, 1}$
+			We replace \cref{alg:neighbHyb1} with \cref{alg:neighbHyb2} where we 
+			set $Y^* = (1, y)$ such that $\Gamma(y)_1 = w^*$. So then, we have that
+			have $F(K, \Gamma(y)_1) = \bot$
+			\item $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
+			We replace $Y^*$ with $Y^* \cup (j, y)$ such that $\Gamma(y)_j = w^*$.
+			Note after the last of these hybrids, we have that $F(K, w^*)$ is always set to $\bot$.
+			\item $\Hyb_3$: Set $z^* = f(t)$ where $t$ is chosen at random %TODO: specify field size
 		\end{itemize}
 		Finally, we can note that if $\Hyb_0 \compInd \Hyb_2$,
 		\begin{equation*}
@@ -135,10 +148,12 @@ which contain $v$.
 			\Pr[\advers(\circNeigb^*, v_0, w, \phi(K, v_0)) = \phi(K, w)]
 		\end{equation*}
 		where $z^*$ in $\circNeigb^*$	is the image on a OWF of a randomly chosen point.
-		Thus, if $\advers$ can produce $\phi(K, v) = (\sigma_v, v)$, then $\advers$
-		can find a preimage for $z*$ under $f$ and thus break the security of a one way function.
-
-		We prove the indistinguishably of the hybrids in \cref{lemma:hybA} and \cref{lemma:hybB}.
+		As we will show in \cref{lemma:hybA}, \cref{lemma:hybB}, and \cref{lemma:hybC},
+		an adversaries advantage between games in $\Hyb_0$ and $\Hyb_3$ is at most $\epsilon / 2$.
+		Thus, if $\advers$ can produce $\phi(K, v) = (\sigma_v, v)$ with advantage $\epsilon / 2$
+		in $\Hyb_3$, then $\advers$
+		can find a pre-image for $z*$ under $f$ with non-negligible probability and thus break the security of a one way function.
+		We then have that the advantage of the adversary in $\Hyb_0$ cannot be more than $\epsilon$.
 	\end{proof}
 \end{lemma}
 
@@ -152,25 +167,98 @@ which contain $v$.
 
 \begin{lemma}
 	\label{lemma:hybA}
-	AAA
+	% TODO: workout
+	$\Hyb_0$ and $\Hyb_1$ are distinguishable with advantage at most $\epsilon / 8$.
+	\begin{proof}
+		Note that for all inputs $(z, v)$ to $\circNeigb$ as defined in \cref{alg:neighb} and \cref{alg:neighbHyb1}
+		are equivalent and thus indistinguishable by the definition of indistinguishable obfuscation.
+		So, if $\eps \in \poly(\lambda)$, then an adversary cannot distinguish the hybrids with probability more than $\epsilon / 8$.
+	\end{proof}
 \end{lemma}
 
 \begin{lemma}
 	\label{lemma:hybB}
+	Each hybrid from $\Hyb_1$ to $\Hyb_{2, 1}$ and $\Hyb_{2, j - 1}$ to $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
+	is distinguishable with advantage at most $\epsilon / (8d)$. Thus, $\Hyb_1$ and $\Hyb_{2, \deg^{-1}(w^*)}$ are distinguishable with advantage at most $\epsilon / 8$.
+	\begin{proof}
+		This proof will follow very closely the simple case of weak extractible obfuscation	as defined in (TODO: cite).
+		The key idea is that if a hybrid is distinguishable with advantage more than $\epsilon / (8d)$, then
+		$\advers$ can produce a label $\phi(K, h)$ for $h \in H$.
+
+		First, assume towards contradiction that there exists an adversary $\advers$ that can distinguish two consecutive hybrids
+		with polynomial advantage $\epsilon' > \epsilon / 8d$.
+		Following the proof sketch in (TODO: cite), say that the input size to $\circNeigb$ is $n$.
+		Also, let $C_0$ be the circuit from the first hybrid and $C_1$ the one from the second.
+		Let $\circMid_i$ be a circuit such that $\circMid_i(X) = C_0(X)$ if $X_i = 0$ and $\circMid_i(X) = C_1(X)$ if $X_i = 1$.
+		Note that $C_0$ and $C_1$ differs on at most 1 input (which is the appended vertex $y$ to $Y^*$);
+		call this input $\alpha$.
+		Then, $\circMid_i = C_0$ if $\alpha_i = 0$ and $\circMid_i = C_1$ if $\alpha_i = 1$.
+		So, if we build an adversary $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma$,
+		we have that $\adversB$ can tell if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
+		Thus, $\adversB$ can reconstruct $\alpha$ with probability at least $\gamma^n$.
+		Note that this implies that $\adversB$ can learn $\phi(K, y)$ where $y \in H$ by construction
+		and thus gives our desired contradiction.
+		So now, we just need to build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \frac{\epsilon}{8d}$.
+
+		Then, $\advers$ can distinguish between $C^M$ via the following:
+		\begin{enumerate}
+			\item Run $I$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
+				\begin{enumerate}
+					\item Sample a random obfuscation of $C_b$ via re-obfuscating the existing $C_b$
+					\item Sample a random obfuscation of $\circMid_i$ via re-obfuscating $\circMid_i$
+					\item Have $\advers$ distinguish between $C_b$ and $\circMid$
+					\item Output 1 if successful.
+				\end{enumerate}
+			Note that we can estimate $\epsilon'_b$ as the number of successful runs, which we will denote $\sum_{j \in [I]} S_{i, j}$, divided by $I$.
+			\item If $\epsilon'_1 > \epsilon'_0$, then $\circMid = C_0$, otherwise, $\circMid = C_1$.
+		\end{enumerate}
+		WLOG, say that $\circMid = C_0$, then
+		\begin{align*}
+			\Pr[\epsilon'_1 > \epsilon'_0] &= \Pr[\sum_{j} S_{1, j} > \sum_{j} S_{0, j}]\\
+			&\geq \Pr\left[\sum_{j} S_{1, j} > \frac{I\epsilon'}{2}\right] \cdot \Pr\left[\sum_{j} S_{0, j} < \frac{I\epsilon'}{2}\right].
+		\end{align*}
+		We then have that
+		\begin{align*}
+			\Pr\left[\sum_{j} S_{1, j} > I\epsilon' \cdot \half\right] \geq 1 - \exp\left( -\frac{I\eps'}{2^2 \cdot 3}\right) =  1 - \exp\left( -\frac{I\eps'}{96}\right). \tag{by the Chernoff bound}
+		\end{align*}
+		And, if iO distinguishing advantage is at most $\alpha$ and $\delta = \frac{\eps'}{2\alpha} - 1$
+		\begin{align*}
+			\Pr\left[\sum_{j} S_{0, j} < \frac{I\epsilon'}{2}\right] &= 1 - Pr\left[\sum_{j} S_{0, j} \geq  (1 + \delta) I\alpha\right]
+			\geq 1 - \exp\left( - I \alpha \left(\frac{\eps'}{2\alpha} - 1\right)^2 \cdot \frac{1}{3} \right) \tag{by the Chernoff bound}\\
+			&\geq 1 - \exp\left( - \frac{I\eps'^2}{12\alpha}\right) \geq 1 - \exp\left(-\frac{I\eps'}{12}\right). \tag{as $\eps' > \alpha$}.
+		\end{align*}
+		So we finally have that
+		\begin{equation}
+			\Pr[\eps'_1 > \eps'_0] \geq 1 - \exp\left(-\frac{I\eps'}{12}\right) - \exp\left( -\frac{I\eps'}{96}\right) \geq 1 - 2\exp\left( -\frac{I\eps'}{96}\right). 
+		\end{equation}
+		
+		Setting $I > \frac{\ln2 \cdot 96\left(\ln n - \ln \left(1 - \frac{\eps}{8d}\right)\right)}{\eps'}$, we have that
+		\begin{align*}
+			\left(\Pr[\eps'_1 > \eps'_0]\right)^n &\geq \left(1 - 2\exp\left( -\frac{I\eps'}{96}\right)\right)^n \\
+			&\geq 1 - 2n \cdot \exp\left( -\frac{I\eps'}{96}\right) = 1 - 2n \cdot \exp\left( -\left(\ln n + \ln\left(1 - \frac{\eps}{8d}\right)\right) \cdot 2\right)\\
+			&= 1 - \left(1 - \frac{\eps}{8d}\right) = \frac{\eps}{8d}
+		\end{align*}
+		as desired.
+	\end{proof}
+	
+\end{lemma}
+
+\begin{lemma}
+	\label{lemma:hybC}
 	AAA
 \end{lemma}
 
 \begin{algorithm}[H]
 	\caption{
-		Circuit for the neighbor function, $\circNeigb^{w^*, \Gamma(w^*)_1, \dots, \Gamma(w^*)_d}$ with punctured PRF key
-		$K(\set{w^*})$ and constant $z^*$%, y^*_1, y^*_2, \dots, y^*_d$
+		Circuit for the neighbor function, $\circNeigb$ with punctured PRF key
+		$K(\set{w^*})$ and constant $w^*, z^*$%, y^*_1, y^*_2, \dots, y^*_d$
 	}
 	\begin{algorithmic}[1]
-		\Function{$\circNeigb$}{$f(\sigma_v), v$}
-			\If{$v \neq w$ and $f(\sigma_v) \neq f(F(K, v))$}
+		\Function{$\circNeigb$}{$X, v$}
+			\If{$v \neq w$ and $f(X) \neq f(F(K, v))$}
 				\State \Return $\bot$
 			\EndIf
-			\If{$v = w$ and $f(\sigma_v) \neq z^*$}
+			\If{$v = w$ and $f(X) \neq z^*$}
 				\State \Return $\bot$ 
 			\EndIf
 		 	\If{$\Gamma(v) = \emptyset$}
@@ -180,18 +268,42 @@ which contain $v$.
 			% 	\State \Return $z^*_1, z^*_2, \dots, z^*_d$
 			% \EndIf
 			\State $u_1, \dots u_d = \Gamma(v)$
-			\If{For some $j \in [d]$, $u_j = w^*$}
-				% Hmmm cannot *actually* return the punctured point
-				% Maybe need to use weak eO here...
-			 	\State Set $F(K, u_j) = \bot$
-			\EndIf
 			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
 		\EndFunction
 	\end{algorithmic}
 	\label{alg:neighbHyb1}
 \end{algorithm}
+% TODO: change w to w^*
 
- 
+
+\begin{algorithm}[H]
+	\caption{
+		Circuit for the neighbor function, $\circNeigb$ with punctured PRF key
+		$K(\set{w^*})$ and constant $w^*, Y^*, J^*, z^*$%, y^*_1, y^*_2, \dots, y^*_d$
+	}
+	\begin{algorithmic}[1]
+		\Function{$\circNeigb$}{$X, v$}
+			\If{$v \neq w$ and $f(X) \neq f(F(K, v))$}
+				\State \Return $\bot$
+			\EndIf
+			\If{$v = w$ and $f(X) \neq z^*$}
+				\State \Return $\bot$ 
+			\EndIf
+		 	\If{$\Gamma(v) = \emptyset$}
+				\State \Return $\bot$
+			\EndIf
+			% \If{$v = w$}
+			% 	\State \Return $z^*_1, z^*_2, \dots, z^*_d$
+			% \EndIf
+			\State $u_1, \dots u_d = \Gamma(v)$
+			\If{$\exists j \in [d], (j^*, v^*) \in Y^*$}
+			 	\State Set $F(K, u_{j^*}) = \bot$
+			\EndIf
+			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighbHyb2}
+\end{algorithm}
 
 	\begin{lemma}
 		The game in $\Hyb_1 (1a)$ is indistinguishable from $\Hyb_0$.

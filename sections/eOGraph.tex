@@ -129,17 +129,18 @@ which contain $v$.
 					\item $\advers$ outputs guess $g$ and wins if $g = \phi(K, w^*)$ %hmmm... do we give w?
 				\end{enumerate}
 			
-			\item $\Hyb_1$: We replace $\circNeigb$ with $\circNeigb^{w^*}$ as defined in \ref{alg:neighbHyb1}.
+			\item $\Hyb_1$: We replace $\circNeigb$ with $\circNeigb$ as defined in \ref{alg:neighbHyb1}.
 			Fix the constant $z^* = f(F(K, w^*))$
 			% and $y^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, y^*_d = f(F(K, \Gamma(w^*)_d))$.
 			\item $\Hyb_{2, 1}$
 			We replace \cref{alg:neighbHyb1} with \cref{alg:neighbHyb2} where we 
 			set $Y^* = (1, y)$ such that $\Gamma(y)_1 = w^*$. So then, we have that
-			have $F(K, \Gamma(y)_1) = \bot$
+			have $F(K, \Gamma(y)_1) = \bot$. Moreover, we set the punctured set, $S$ to $\emptyset$ (i.e.\ we do not puncture the PRF).
 			\item $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
 			We replace $Y^*$ with $Y^* \cup (j, y)$ such that $\Gamma(y)_j = w^*$.
 			Note after the last of these hybrids, we have that $F(K, w^*)$ is always set to $\bot$.
-			\item $\Hyb_3$: Set $z^* = f(t)$ where $t$ is chosen at random %TODO: specify field size
+			\item $\Hyb_3$: We puncture the PRF at $w^*$ and set $S = \set{w^*}$.
+			\item $\Hyb_4$: Set $z^* = f(t)$ where $t$ is chosen at random %TODO: specify field size
 		\end{itemize}
 		Finally, we can note that if $\Hyb_0 \compInd \Hyb_2$,
 		\begin{equation*}
@@ -168,7 +169,7 @@ which contain $v$.
 \begin{lemma}
 	\label{lemma:hybA}
 	% TODO: workout
-	$\Hyb_0$ and $\Hyb_1$ are distinguishable with advantage at most $\epsilon / 8$.
+	$\Hyb_0$ and $\Hyb_1$ are distinguishable with advantage at most $\epsilon / 10$.
 	\begin{proof}
 		Note that for all inputs $(z, v)$ to $\circNeigb$ as defined in \cref{alg:neighb} and \cref{alg:neighbHyb1}
 		are equivalent and thus indistinguishable by the definition of indistinguishable obfuscation.
@@ -179,14 +180,14 @@ which contain $v$.
 \begin{lemma}
 	\label{lemma:hybB}
 	Each hybrid from $\Hyb_1$ to $\Hyb_{2, 1}$ and $\Hyb_{2, j - 1}$ to $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
-	is distinguishable with advantage at most $\epsilon / (8d)$. Thus, $\Hyb_1$ and $\Hyb_{2, \deg^{-1}(w^*)}$ are distinguishable with advantage at most $\epsilon / 8$.
+	is distinguishable with advantage at most $\epsilon / (10d)$. Thus, $\Hyb_1$ and $\Hyb_{2, \deg^{-1}(w^*)}$ are distinguishable with advantage at most $\epsilon / 10$.
 	\begin{proof}
 		This proof will follow very closely the simple case of weak extractible obfuscation	as defined in (TODO: cite).
-		The key idea is that if a hybrid is distinguishable with advantage more than $\epsilon / (8d)$, then
+		The key idea is that if a hybrid is distinguishable with advantage more than $\epsilon / 10d$, then
 		$\advers$ can produce a label $\phi(K, h)$ for $h \in H$.
 
 		First, assume towards contradiction that there exists an adversary $\advers$ that can distinguish two consecutive hybrids
-		with polynomial advantage $\epsilon' > \epsilon / 8d$.
+		with polynomial advantage $\epsilon' > \epsilon / 10d$.
 		Following the proof sketch in (TODO: cite), say that the input size to $\circNeigb$ is $n$.
 		Also, let $C_0$ be the circuit from the first hybrid and $C_1$ the one from the second.
 		Let $\circMid_i$ be a circuit such that $\circMid_i(X) = C_0(X)$ if $X_i = 0$ and $\circMid_i(X) = C_1(X)$ if $X_i = 1$.
@@ -198,11 +199,11 @@ which contain $v$.
 		Thus, $\adversB$ can reconstruct $\alpha$ with probability at least $\gamma^n$.
 		Note that this implies that $\adversB$ can learn $\phi(K, y)$ where $y \in H$ by construction
 		and thus gives our desired contradiction.
-		So now, we just need to build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \frac{\epsilon}{8d}$.
+		So now, we just need to build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \frac{\epsilon}{10d}$.
 
 		Then, $\advers$ can distinguish between $C^M$ via the following:
 		\begin{enumerate}
-			\item Run $I$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
+			\item Run $I =\left\lceil \frac{\ln2 \cdot 96\left(\ln n - \ln \left(1 - \frac{\eps}{10d}\right)\right)}{\eps'} \right\rceil$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
 				\begin{enumerate}
 					\item Sample a random obfuscation of $C_b$ via re-obfuscating the existing $C_b$
 					\item Sample a random obfuscation of $\circMid_i$ via re-obfuscating $\circMid_i$
@@ -214,7 +215,7 @@ which contain $v$.
 		\end{enumerate}
 		WLOG, say that $\circMid = C_0$, then
 		\begin{align*}
-			\Pr[\epsilon'_1 > \epsilon'_0] &= \Pr[\sum_{j} S_{1, j} > \sum_{j} S_{0, j}]\\
+			\gamma = Pr[\epsilon'_1 > \epsilon'_0] &= \Pr[\sum_{j} S_{1, j} > \sum_{j} S_{0, j}]\\
 			&\geq \Pr\left[\sum_{j} S_{1, j} > \frac{I\epsilon'}{2}\right] \cdot \Pr\left[\sum_{j} S_{0, j} < \frac{I\epsilon'}{2}\right].
 		\end{align*}
 		We then have that
@@ -232,26 +233,43 @@ which contain $v$.
 			\Pr[\eps'_1 > \eps'_0] \geq 1 - \exp\left(-\frac{I\eps'}{12}\right) - \exp\left( -\frac{I\eps'}{96}\right) \geq 1 - 2\exp\left( -\frac{I\eps'}{96}\right). 
 		\end{equation}
 		
-		Setting $I > \frac{\ln2 \cdot 96\left(\ln n - \ln \left(1 - \frac{\eps}{8d}\right)\right)}{\eps'}$, we have that
+		Setting $I \geq \frac{\ln2 \cdot 96\left(\ln n - \ln \left(1 - \frac{\eps}{10d}\right)\right)}{\eps'} \in \poly(n, 1/\eps, 1/\eps')$, we have that
 		\begin{align*}
-			\left(\Pr[\eps'_1 > \eps'_0]\right)^n &\geq \left(1 - 2\exp\left( -\frac{I\eps'}{96}\right)\right)^n \\
-			&\geq 1 - 2n \cdot \exp\left( -\frac{I\eps'}{96}\right) = 1 - 2n \cdot \exp\left( -\left(\ln n + \ln\left(1 - \frac{\eps}{8d}\right)\right) \cdot 2\right)\\
-			&= 1 - \left(1 - \frac{\eps}{8d}\right) = \frac{\eps}{8d}
+			\gamma^n &\geq \left(1 - 2\exp\left( -\frac{I\eps'}{96}\right)\right)^n \\
+			&\geq 1 - 2n \cdot \exp\left( -\frac{I\eps'}{96}\right) = 1 - 2n \cdot \exp\left( -\left(\ln n + \ln\left(1 - \frac{\eps}{10d}\right)\right) \cdot 2\right)\\
+			&= 1 - \left(1 - \frac{\eps}{10d}\right) = \frac{\eps}{10d}
 		\end{align*}
 		as desired.
+		% TODO: move to Appendix!!!
 	\end{proof}
 	
 \end{lemma}
 
 \begin{lemma}
+	The game in $\Hyb_{2, \deg^{-1}(w^*)}$ is indistinguishable from $\Hyb_3$.
+	\begin{proof}
+		The indistinguishably follows directly from the definition of indistinguishable obfuscation.
+	\end{proof}
+\end{lemma}
+
+\begin{lemma}
 	\label{lemma:hybC}
-	AAA
+	% TODO: assuming this then that
+	The game in $\Hyb_{3}$ is indistinguishable from $\Hyb_4$.
+	\begin{proof}
+		We now show that if the advantage of $\advers$ is greater than $\eps/8$, then we can
+		create a reduction, $\adversB$, which can break the selective security of the PRF at the punctured point.
+		$\adversB$ first chooses a message $w^*$ and submits this to the constrained PRF challenger and gets back the punctured PRF key
+		$K(\set{w^*})$ and challenge $a$. $\adversB$ then runs the experiment in $\Hyb_{2, \deg^{-1}(w^*)}$
+		except that $z^* = f(a)$. If $a$ is the output of the PRF, then we are in $\Hyb_{2, \deg^{-1}(w^*)}$,
+		if $a$ is the output of a random function, then we are in $\Hyb_3$.
+	\end{proof}
 \end{lemma}
 
 \begin{algorithm}[H]
 	\caption{
-		Circuit for the neighbor function, $\circNeigb$ with punctured PRF key
-		$K(\set{w^*})$ and constant $w^*, z^*$%, y^*_1, y^*_2, \dots, y^*_d$
+		Circuit for the neighbor function, $\circNeigb$ with PRF key
+		$K$ and constant $w^*, z^*$%, y^*_1, y^*_2, \dots, y^*_d$
 	}
 	\begin{algorithmic}[1]
 		\Function{$\circNeigb$}{$X, v$}
@@ -279,7 +297,7 @@ which contain $v$.
 \begin{algorithm}[H]
 	\caption{
 		Circuit for the neighbor function, $\circNeigb$ with punctured PRF key
-		$K(\set{w^*})$ and constant $w^*, Y^*, J^*, z^*$%, y^*_1, y^*_2, \dots, y^*_d$
+		$K(S)$ and constant $w^*, Y^*, J^*, z^*$%, y^*_1, y^*_2, \dots, y^*_d$
 	}
 	\begin{algorithmic}[1]
 		\Function{$\circNeigb$}{$X, v$}

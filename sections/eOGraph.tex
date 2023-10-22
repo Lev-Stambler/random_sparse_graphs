@@ -70,7 +70,7 @@ $\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are t
 	$C_E \subset E$ which separates $v_0$ and $v$ and a set $C_V$ such that
 	\begin{equation}
 		\label{eq:cutLabel}
-		\Pr[\advers(\obfFN(\circNeigb), v_0, v, \phi(K, v_0)) \in \phi(K, C_V)] \leq \negl(\lambda).
+		\Pr[\advers(\obfFN(\circNeigb), v_0, v, \phi(K, v_0)) \in \phi(K, C_V)] < \eps.
 	\end{equation}
 		We define $C_V \subset V$ to be
 	\begin{equation*}
@@ -111,12 +111,14 @@ which contain $v$.
 
 \begin{lemma}[Inductive Game Hypothesis]
 	Let $H \subset V$ be a ``hard'' set of vertices such that $\advers$ cannot, with non-negligible probability, produce 
-	$\phi(K, h)$ where $h \in H$. Note that the base case has $H = C_V$. Then, 
+	$\phi(K, h)$ where $h \in H$. Note that the base case has $H = C_V$. 
+	Assuming BLAH
+	Then, 
 	for any $v \notin H$ and $w \in \Gamma(h)$ for all $h \in H$, we have that
 	\begin{equation*}
 		% TODO: change all to just <
 		% TODO: maybe we nee to fix \eps
-		\Pr[\advers(\obfFN(\circNeigb), v_0, w, \phi(K, v_0)) = \phi(K, w)] < \negl(\lambda).
+		\Pr[\advers(\obfFN(\circNeigb), v_0, w, \phi(K, v_0)) = \phi(K, w)] < \eps.
 	\end{equation*}
 	\begin{proof}
 		We are going to use a series of indistinguishable hybrids along with the circuit defined in \ref{alg:neighbHyb1} to show the above

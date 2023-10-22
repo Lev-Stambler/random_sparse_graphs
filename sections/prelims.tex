@@ -12,165 +12,206 @@
 
 
 \section{Preliminaries}
-\subsection{Bounded Functional Encryption}
-We will use the notation of static, bounded functional encryption as presented in
-\cite{garg2022dynamic}.
+\subsection{Punctured PRF}
+A punctured PRF is a simple type of constrained PRF (\cite{boneh2013constrained,boyle2014functional,kiayias2013delegatable})
+where a PRF is well defined on all inputs except for a specified, polynomial-sized set.
+We will adopt the notion specified in \cite{sahai2014use}.
 
-\subsubsection*{Security}
-% urrr... ughh we need to make this LaTeX. Low key use **nougat** for this.
-We will slightly weaken the security notion such that the adversary does not choose
-which circuits it can learn the functional secret key for. Indeed, this is a weaker notion of functional encryption
-which fixes the adversary's output circuit.
-We will assume that we get circuit $C_1, \dots, C_d$.
+\begin{definition}[Punctured PRF]
+	A puncturable family of PRF	s $F$ mapping is given by a tuple of algorithms $(\text{Key}_F, \text{Puncture}_F, \text{Eval}_F)$.
+	satisfying the following conditions: \begin{itemize}
+		\item Functionality preserved under puncturing: For every PPT adversary $\advers$,
+		$S \subseteq \set{0, 1}^{n}$
+		and every $x \in \{0, 1\}^n$ where $x \notin S$, we have that
+		\begin{equation*}
+			\Pr\left[\texttt{Eval}_F(K, x) = \texttt{Eval}_F(K_S, x) \mid K \gets \texttt{Key}_F(1^\lambda), \texttt{K}_S = \texttt{Puncture}_F(K, S)\right] = 1.
+		\end{equation*}
+		\item Pseudorandom at punctured points: For every PPT adversary $\advers, \adversB$ such that
+		$\advers(1^\lambda)$ outputs a set $S$ and state $\mathbf{st}$, consider an experiment where $K \gets \texttt{Key}_F(1^\lambda)$
+		and $K_S = \texttt{Puncture}_F(K, S)$. Then, we have that
+		\begin{equation*}
+			\left|\Pr\left[\adversB(\texttt{st}, K_S, S, \texttt{Eval}_F(K, S)) = 1 \right]
+				- \Pr\left[\adversB(\texttt{st}, K_S, S, U_{m \cdot |S|}) \right] \right| \leq \negl(\lambda).
+		\end{equation*}
+	\end{itemize}
+\end{definition}
 
-% See page 8 of \cite{agrawal2017functional} for now. I'll put in the actual definition later.
-For completeness, we have the original security definition of \cite{garg2022dynamic} below:
-\[
-\begin{aligned}
-&\left\{
-\begin{array}{l}
-\vcenter{\hbox{$\advers^{\text{KeyGen}(\MSK, \cdot)}(\mathbf{\FECT})$}}
-\end{array}
-\begin{array}{l}
-\left(1^n, 1^q\right) \leftarrow \advers^{(1)} \\
-\left(\MPK, \MSK\right) \leftarrow \text{Setup}\left(1^n, 1^q\right) \\
-m \leftarrow \advers^{\text{KeyGen}(\MSK)}(\MPK) \\
-\FECT \leftarrow \text{Enc}(\MPK, m)
-\end{array}
-\right\}_{\lambda \in \N}\\
-&\compInd \\
-&\left\{
-\begin{array}{l}
-\vcenter{\hbox{$\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$}}
-\end{array}
-\begin{array}{l}
-\left(1^n, 1^q\right) \leftarrow \advers{(1^\lambda)} \\
-\left(\MPK, \mathbf{st}_0\right) \leftarrow \Sim_0\left(1^\lambda, 1^n, q\right) \\
-m \leftarrow \advers^{S_1(\mathbf{st}_0)}(\MPK) \\
-\left(\FECT, \mathbf{st}_2\right) \leftarrow \Sim_2(\mathbf{st}_1, \Pi^m)
-\end{array}
-\right\}_{\lambda \in \N}
-\end{aligned}
-\]
-whenever the following admissibility constraints and properties are satisfied:
-\begin{itemize}
-	\item $\Sim_1, \Sim_3$ are stateful in that after each invocation, they updated their
-	states $\mathbf{st}_1, \mathbf{st}_3$ respectively which is carried over to the next invocation.
-	\item $\Pi^m$ contains a list of functions $f_i$ queried by $\advers$ in the pre-challenge
-	phase along with their output on the challenge message $m$. That is, if $f_i$ is the $i$-th
-	function queried by $\advers$ to oracle $\Sim_1$ and $q_{[re}$ be the number of queries $\advers$
-	makes before outputting $m$, then $\Pi^m = \big((f_1, f_1(m)), \dots, (f_{q_{pre}}, f_{q_{pre}}(m))\big)$.
-	\item $\advers$ makes at most $q$ queries combined tote key generation oracle in both games.
-	\item $\Sim_3$ for eac queried function $f_i$, in the post challenge phase, makes a single query to its
-	message oracle $U_m$ on the same $f_i$ itself.
-\end{itemize}
+\subsection{Indistinguishable Obfuscation}
+We will use the definition of indistinguishable obfuscation as presented in \cite{garg2016candidate}.
+\begin{definition}[Indistinguishable obfuscation]
+	A uniform PPT machine $\mathcal{O}$ is an indistinguishable obfuscator for a class of circuits $\mathcal{C}$ if for every circuit $C \in \mathcal{C}$
+	we have that
+	\begin{equation*}
+		\Pr[C'(x) = C(x) \mid C' \gets \mathcal{O}(C)] \leq \negl(\lambda)
+	\end{equation*}
+	and for any PPT distinguisher $\adversD$ and two pairs of circuits $C_0, C_1$ such that
+	$C_0(x) = C_1(x)$ for all $x$, then
+	\begin{equation*}
+		\bigg|\Pr\left[\adversD(\mathcal{O}(\lambda, C_0)) = 1\right] - \Pr\left[\adversD(\mathcal{O}(\lambda, C_1)) = 1\right]\bigg|.
+	\end{equation*}
+	
+\end{definition}
 
-Our modified security definition is as follows:
-\begin{equation}
-\label{eq:FEsec}
-\begin{aligned}
-	&\left\{
-		\begin{array}{l}
-		\vcenter{\hbox{
-			$\advers^{\text{KeyGen}(\MSK, \{C_1, \dots, C_d\})}(\mathbf{\FECT})$
-			}}
-		\end{array}
-		\begin{array}{l}
-		\left(1^n, 1^q\right) \leftarrow \advers^{(1)} \\
-		\left(\MPK, \MSK\right) \leftarrow \text{Setup}\left(1^n, 1^q\right) \\
-		m \leftarrow \advers(\MPK, \SK_{C_1}, \dots, \SK_{C_d}) \\
-		\FECT \leftarrow \text{Enc}(\MPK, m)
-		\end{array}
-	\right\}_{\lambda \in \N}\\
-&\compInd \\
-	&\left\{
-		\begin{array}{l}
-		\vcenter{\hbox{
-			$\advers^{\Sim_3^{U_m(\{C_1, \dots, C_d\})}}(\FECT)$
-		}}
-		\end{array}
-		\begin{array}{l}
-		\left(1^n, 1^q\right) \leftarrow \advers{(1^\lambda)} \\
-		\left(\MPK, \mathbf{st}_0\right) \leftarrow \Sim_0\left(1^\lambda, 1^n, q\right) \\
-		m \leftarrow \advers^{S_1(\mathbf{st}_0)}(\MPK, C_1, \dots, C_d) \\
-		\left(\FECT, \mathbf{st}_2\right) \leftarrow \Sim_2(\mathbf{st}_1, \Pi^m)
-		\end{array}
-	\right\}_{\lambda \in \N}
-\end{aligned}
-\end{equation}
-where the admissibility constraints remain the same.
 
-% we also copy th admissibility constraints of \cite{garg2022dynamic}:
-% TODO:!
+% \subsection{Bounded Functional Encryption}
+% We will use the notation of static, bounded functional encryption as presented in
+% \cite{garg2022dynamic}.
 
-% \begin{minipage}{0.46\textwidth}
-% \begin{algorithm}[H]
-%     \centering
-%     \caption{$\ExpReal(1^\lambda)$}
-%     \begin{algorithmic}[1]
-%         \State $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
-% 				\State $\SK_{C_i} \gets \FEKeygen(\MSK, C_i)$ for $i \in [d]$
-% 				\State $x_i \gets \advers(\SK_{C_i})$
-% 				\State $\FECT_i \gets \FEEnc(\MPK, x_i)$
-% 				\State $\alpha \gets \advers(\FECT_1, \dots, \FECT_d)$
-% 				\State \Return $x_1, \dots, x_d, \alpha$
-%     \end{algorithmic}
-% 		\label{alg:FEExprReal}
-% \end{algorithm}
-% \end{minipage}
-% \hfill
-% \begin{minipage}{0.46\textwidth}
-% \begin{algorithm}[H]
-%     \centering
-%     \caption{$\ExpSim(1^\lambda)$}\label{alg:FEExprSim}
-%     \begin{algorithmic}[1]
-%         \State $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
-% 				\State $\SK_{C_i} \gets \FEKeygen(\MSK, C_i)$ for $i \in [d]$
-% 				\State $x_i \gets \advers(\SK_{C_i})$
-% 				\State $\FECT_i \gets \Sim(1^\lambda, 1^{|x_i|}, \MPK, C_i, \SK_{C_i}, C_i(x_i))$
-% 				\State $\alpha \gets \advers(\FECT_1, \dots, \FECT_d)$
-% 				\State \Return $x_1, \dots, x_d, \alpha$
-%     \end{algorithmic}
-% \end{algorithm}
-% \end{minipage}
+% \subsubsection*{Security}
+% % urrr... ughh we need to make this LaTeX. Low key use **nougat** for this.
+% We will slightly weaken the security notion such that the adversary does not choose
+% which circuits it can learn the functional secret key for. Indeed, this is a weaker notion of functional encryption
+% which fixes the adversary's output circuit.
+% We will assume that we get circuit $C_1, \dots, C_d$.
 
-% TODO: change to use this definition https://eprint.iacr.org/2019/314.pdf
-% because in the above we can \emph{simulate} $SK_{C_i}$.
-% Actually no: use https://eprint.iacr.org/2021/847.pdf because statefulness / simplicity
+% % See page 8 of \cite{agrawal2017functional} for now. I'll put in the actual definition later.
+% For completeness, we have the original security definition of \cite{garg2022dynamic} below:
+% \[
+% \begin{aligned}
+% &\left\{
+% \begin{array}{l}
+% \vcenter{\hbox{$\advers^{\text{KeyGen}(\MSK, \cdot)}(\mathbf{\FECT})$}}
+% \end{array}
+% \begin{array}{l}
+% \left(1^n, 1^q\right) \leftarrow \advers^{(1)} \\
+% \left(\MPK, \MSK\right) \leftarrow \text{Setup}\left(1^n, 1^q\right) \\
+% m \leftarrow \advers^{\text{KeyGen}(\MSK)}(\MPK) \\
+% \FECT \leftarrow \text{Enc}(\MPK, m)
+% \end{array}
+% \right\}_{\lambda \in \N}\\
+% &\compInd \\
+% &\left\{
+% \begin{array}{l}
+% \vcenter{\hbox{$\advers^{\Sim_3^{U_m(\cdot)}}(\FECT)$}}
+% \end{array}
+% \begin{array}{l}
+% \left(1^n, 1^q\right) \leftarrow \advers{(1^\lambda)} \\
+% \left(\MPK, \mathbf{st}_0\right) \leftarrow \Sim_0\left(1^\lambda, 1^n, q\right) \\
+% m \leftarrow \advers^{S_1(\mathbf{st}_0)}(\MPK) \\
+% \left(\FECT, \mathbf{st}_2\right) \leftarrow \Sim_2(\mathbf{st}_1, \Pi^m)
+% \end{array}
+% \right\}_{\lambda \in \N}
+% \end{aligned}
+% \]
+% whenever the following admissibility constraints and properties are satisfied:
+% \begin{itemize}
+% 	\item $\Sim_1, \Sim_3$ are stateful in that after each invocation, they updated their
+% 	states $\mathbf{st}_1, \mathbf{st}_3$ respectively which is carried over to the next invocation.
+% 	\item $\Pi^m$ contains a list of functions $f_i$ queried by $\advers$ in the pre-challenge
+% 	phase along with their output on the challenge message $m$. That is, if $f_i$ is the $i$-th
+% 	function queried by $\advers$ to oracle $\Sim_1$ and $q_{[re}$ be the number of queries $\advers$
+% 	makes before outputting $m$, then $\Pi^m = \big((f_1, f_1(m)), \dots, (f_{q_{pre}}, f_{q_{pre}}(m))\big)$.
+% 	\item $\advers$ makes at most $q$ queries combined tote key generation oracle in both games.
+% 	\item $\Sim_3$ for eac queried function $f_i$, in the post challenge phase, makes a single query to its
+% 	message oracle $U_m$ on the same $f_i$ itself.
+% \end{itemize}
 
-% Note that the adversary $\advers$ and simulator are stateful but we do not include this in the above notation for simplicity.
+% Our modified security definition is as follows:
+% \begin{equation}
+% \label{eq:FEsec}
+% \begin{aligned}
+% 	&\left\{
+% 		\begin{array}{l}
+% 		\vcenter{\hbox{
+% 			$\advers^{\text{KeyGen}(\MSK, \{C_1, \dots, C_d\})}(\mathbf{\FECT})$
+% 			}}
+% 		\end{array}
+% 		\begin{array}{l}
+% 		\left(1^n, 1^q\right) \leftarrow \advers^{(1)} \\
+% 		\left(\MPK, \MSK\right) \leftarrow \text{Setup}\left(1^n, 1^q\right) \\
+% 		m \leftarrow \advers(\MPK, \SK_{C_1}, \dots, \SK_{C_d}) \\
+% 		\FECT \leftarrow \text{Enc}(\MPK, m)
+% 		\end{array}
+% 	\right\}_{\lambda \in \N}\\
+% &\compInd \\
+% 	&\left\{
+% 		\begin{array}{l}
+% 		\vcenter{\hbox{
+% 			$\advers^{\Sim_3^{U_m(\{C_1, \dots, C_d\})}}(\FECT)$
+% 		}}
+% 		\end{array}
+% 		\begin{array}{l}
+% 		\left(1^n, 1^q\right) \leftarrow \advers{(1^\lambda)} \\
+% 		\left(\MPK, \mathbf{st}_0\right) \leftarrow \Sim_0\left(1^\lambda, 1^n, q\right) \\
+% 		m \leftarrow \advers^{S_1(\mathbf{st}_0)}(\MPK, C_1, \dots, C_d) \\
+% 		\left(\FECT, \mathbf{st}_2\right) \leftarrow \Sim_2(\mathbf{st}_1, \Pi^m)
+% 		\end{array}
+% 	\right\}_{\lambda \in \N}
+% \end{aligned}
+% \end{equation}
+% where the admissibility constraints remain the same.
 
-\subsection{Non-malleable Bounded FE}
-Here, we introduce the notion of non-malleable bounded functional encryption.
-% While we make the definition explicit (in terms of its non-malleability), we prove
-% that simulation-secure bounded FE is equivalent to simulation secure non-malleable bounded FE.
+% % we also copy th admissibility constraints of \cite{garg2022dynamic}:
+% % TODO:!
 
-% TODO: cite https://www.cs.cornell.edu/courses/cs687/2006fa/lectures/lecture16.pdf
-We define non-malleable security of bounded functional encryption in almost the exact
-notion of \cite{PassNM} for public key encryption. First,
-let $NM(m_1, \dots, m_q, \advers)$ be a game as follows for $q = \poly(\lambda)$:
-\begin{enumerate}
-	\item $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
-	\item $\FECT_1, \dots, \FECT_q \gets \FEEnc(\MPK, m_1), \dots \FEEnc(\MPK, m_q)$
-	\item $\FECT_1', \dots, \FECT_\ell' \gets \advers(\MPK, \FECT_1, \dots, \FECT_q, 1^{|m|})$
-	\item $m_i' \gets \bot$ is $\FECT_i = \FECT_j'$ for any $i \in [q]$, $j \in [\ell]$ and $\FEDec(\SK_{\text{identity}}, c_i)$ otherwise.
-\end{enumerate}
-Then, we say that a bounded functional encryption scheme is non-malleable if for all PPT $\advers$
-and every PPT $\adversD$, there exists a negligible function $\negl$ such that
-for all $\set{m}_0, \set{m}_1 \in \{0, 1\}^{nq}$, we have
-\begin{equation}
-	\big|\Pr[\adversD(NM(\{m\}_0, \advers)) = 1] - \Pr[\adversD(NM(\{m\}_1 , \advers)) = 1] \big|\leq \negl.
-\end{equation}
+% % \begin{minipage}{0.46\textwidth}
+% % \begin{algorithm}[H]
+% %     \centering
+% %     \caption{$\ExpReal(1^\lambda)$}
+% %     \begin{algorithmic}[1]
+% %         \State $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
+% % 				\State $\SK_{C_i} \gets \FEKeygen(\MSK, C_i)$ for $i \in [d]$
+% % 				\State $x_i \gets \advers(\SK_{C_i})$
+% % 				\State $\FECT_i \gets \FEEnc(\MPK, x_i)$
+% % 				\State $\alpha \gets \advers(\FECT_1, \dots, \FECT_d)$
+% % 				\State \Return $x_1, \dots, x_d, \alpha$
+% %     \end{algorithmic}
+% % 		\label{alg:FEExprReal}
+% % \end{algorithm}
+% % \end{minipage}
+% % \hfill
+% % \begin{minipage}{0.46\textwidth}
+% % \begin{algorithm}[H]
+% %     \centering
+% %     \caption{$\ExpSim(1^\lambda)$}\label{alg:FEExprSim}
+% %     \begin{algorithmic}[1]
+% %         \State $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
+% % 				\State $\SK_{C_i} \gets \FEKeygen(\MSK, C_i)$ for $i \in [d]$
+% % 				\State $x_i \gets \advers(\SK_{C_i})$
+% % 				\State $\FECT_i \gets \Sim(1^\lambda, 1^{|x_i|}, \MPK, C_i, \SK_{C_i}, C_i(x_i))$
+% % 				\State $\alpha \gets \advers(\FECT_1, \dots, \FECT_d)$
+% % 				\State \Return $x_1, \dots, x_d, \alpha$
+% %     \end{algorithmic}
+% % \end{algorithm}
+% % \end{minipage}
 
-As outlined in \cite{PassNM}, we can equivalently define non-malleability in terms of a PPT recognizable relation $R$
-such that
-\begin{align}
-	\label{eq:NMRel}
-	\bigg|\Pr&\left[NM\left(m_1, \dots m_q, \advers(z)\right) \in \bigcup_{m \in \{m\}} R(m)\right]- \\
-				\Pr&\left[c \gets \Sim_{NM}(1^n, z); m' = \FEDec(\SK_{\text{identity}}, c); m' \in \bigcup_{m \in \{m\}} R(m)\right]\bigg| \leq \negl(\lambda). \notag
-\end{align}
-Note that in the above definition, we do not give the adversary access to any $\SK_{C_i}$.
-We simply require that the scheme is public key (many message) non-malleable.
+% % TODO: change to use this definition https://eprint.iacr.org/2019/314.pdf
+% % because in the above we can \emph{simulate} $SK_{C_i}$.
+% % Actually no: use https://eprint.iacr.org/2021/847.pdf because statefulness / simplicity
 
-% TODO: these are not the right definitions!!! We need to basically say something a bit different
-% Basically we need to say that the above holds true 
+% % Note that the adversary $\advers$ and simulator are stateful but we do not include this in the above notation for simplicity.
+
+% \subsection{Non-malleable Bounded FE}
+% Here, we introduce the notion of non-malleable bounded functional encryption.
+% % While we make the definition explicit (in terms of its non-malleability), we prove
+% % that simulation-secure bounded FE is equivalent to simulation secure non-malleable bounded FE.
+
+% % TODO: cite https://www.cs.cornell.edu/courses/cs687/2006fa/lectures/lecture16.pdf
+% We define non-malleable security of bounded functional encryption in almost the exact
+% notion of \cite{PassNM} for public key encryption. First,
+% let $NM(m_1, \dots, m_q, \advers)$ be a game as follows for $q = \poly(\lambda)$:
+% \begin{enumerate}
+% 	\item $(\MPK, \MSK) \gets \FESetup(1^\lambda)$
+% 	\item $\FECT_1, \dots, \FECT_q \gets \FEEnc(\MPK, m_1), \dots \FEEnc(\MPK, m_q)$
+% 	\item $\FECT_1', \dots, \FECT_\ell' \gets \advers(\MPK, \FECT_1, \dots, \FECT_q, 1^{|m|})$
+% 	\item $m_i' \gets \bot$ is $\FECT_i = \FECT_j'$ for any $i \in [q]$, $j \in [\ell]$ and $\FEDec(\SK_{\text{identity}}, c_i)$ otherwise.
+% \end{enumerate}
+% Then, we say that a bounded functional encryption scheme is non-malleable if for all PPT $\advers$
+% and every PPT $\adversD$, there exists a negligible function $\negl$ such that
+% for all $\set{m}_0, \set{m}_1 \in \{0, 1\}^{nq}$, we have
+% \begin{equation}
+% 	\big|\Pr[\adversD(NM(\{m\}_0, \advers)) = 1] - \Pr[\adversD(NM(\{m\}_1 , \advers)) = 1] \big|\leq \negl.
+% \end{equation}
+
+% As outlined in \cite{PassNM}, we can equivalently define non-malleability in terms of a PPT recognizable relation $R$
+% such that
+% \begin{align}
+% 	\label{eq:NMRel}
+% 	\bigg|\Pr&\left[NM\left(m_1, \dots m_q, \advers(z)\right) \in \bigcup_{m \in \{m\}} R(m)\right]- \\
+% 				\Pr&\left[c \gets \Sim_{NM}(1^n, z); m' = \FEDec(\SK_{\text{identity}}, c); m' \in \bigcup_{m \in \{m\}} R(m)\right]\bigg| \leq \negl(\lambda). \notag
+% \end{align}
+% Note that in the above definition, we do not give the adversary access to any $\SK_{C_i}$.
+% We simply require that the scheme is public key (many message) non-malleable.
+
+% % TODO: these are not the right definitions!!! We need to basically say something a bit different
+% % Basically we need to say that the above holds true 

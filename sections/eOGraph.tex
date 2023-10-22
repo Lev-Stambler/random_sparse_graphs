@@ -160,14 +160,6 @@ which contain $v$.
 	\end{proof}
 \end{lemma}
 
-% Hmmmmm we can still not fully use eO correctly, there may be more than one
-% input which messes us up...
-% I guess that we can simply **require** each vertex to have a polynomial number of inputs...
-% Hmmm... also still need to see if DAGs are required!
-% Maybe to remove DAG we have two functions with different proofs?: 1 on the way forward
-% and 1 on the way "backwards"
-% TODO: for now j assume DAG with limited (poly) number of inputs
-
 \begin{lemma}
 	\label{lemma:hybA}
 	% TODO: workout
@@ -184,28 +176,32 @@ which contain $v$.
 	Each hybrid from $\Hyb_1$ to $\Hyb_{2, 1}$ and $\Hyb_{2, j - 1}$ to $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
 	is distinguishable with advantage at most $\epsilon / (10d)$. Thus, $\Hyb_1$ and $\Hyb_{2, \deg^{-1}(w^*)}$ are distinguishable with advantage at most $\epsilon / 10$.
 	\begin{proof}
-		This proof will follow very closely the simple case of weak extractible obfuscation	as defined in (TODO: cite).
+		This proof will be a modification of the proof in \cite{ishai2015public} for the simple case of weak extractible obfuscation.
 		The key idea is that if a hybrid is distinguishable with advantage more than $\epsilon / 10d$, then
 		$\advers$ can produce a label $\phi(K, h)$ for $h \in H$.
 
 		First, assume towards contradiction that there exists an adversary $\advers$ that can distinguish two consecutive hybrids
 		with polynomial advantage $\epsilon' > \epsilon / 10d$.
-		Following the proof sketch in (TODO: cite), say that the input size to $\circNeigb$ is $n$.
+		Following the proof sketch in \cite{ishai2015public} say that the input size to $\circNeigb$ is $n$.
 		Also, let $C_0$ be the circuit from the first hybrid and $C_1$ the one from the second.
 		Let $\circMid_i$ be a circuit such that $\circMid_i(X) = C_0(X)$ if $X_i = 0$ and $\circMid_i(X) = C_1(X)$ if $X_i = 1$.
 		Note that $C_0$ and $C_1$ differs on at most 1 input (which is the appended vertex $y$ to $Y^*$);
 		call this input $\alpha$.
 		Then, $\circMid_i = C_0$ if $\alpha_i = 0$ and $\circMid_i = C_1$ if $\alpha_i = 1$.
 		So, if we build an adversary $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma$,
-		we have that $\adversB$ can tell if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
+		we have that $\adversB(C_0, C_1)$ can tell if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
 		Thus, $\adversB$ can reconstruct $\alpha$ with probability at least $\gamma^n$.
 		Note that this implies that $\adversB$ can learn $\phi(K, y)$ where $y \in H$ by construction
 		and thus gives our desired contradiction.
+		Moreover, we have that $\advers(C_0)$ (where $C_0 = \circNeigb$) can construct $C_1$ (and thus $\circMid_i$)
+		by obfuscating a program which calls $\circNeigb$ internally and returns $\bot$ for the $j$-th input
+		if the input vertex is $u$ such that $(j, u) \in Y^*$.
+
 		So now, we just need to build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \frac{\epsilon}{10d}$.
 
 		Then, $\advers$ can distinguish between $C^M$ via the following:
 		\begin{enumerate}
-			\item Run $I =\left\lceil \frac{\ln2 \cdot 96\left(\ln n - \ln \left(1 - \frac{\eps}{10d}\right)\right)}{\eps'} \right\rceil$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
+			\item Run $I =\left\lceil \frac{12\left(\ln n - \ln\left(1 - \frac{\eps}{10d}\right) + \ln 2\right)}{\eps'} \right\rceil$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
 				\begin{enumerate}
 					\item Sample a random obfuscation of $C_b$ via re-obfuscating the existing $C_b$
 					\item Sample a random obfuscation of $\circMid_i$ via re-obfuscating $\circMid_i$
@@ -215,34 +211,9 @@ which contain $v$.
 			Note that we can estimate $\epsilon'_b$ as the number of successful runs, which we will denote $\sum_{j \in [I]} S_{i, j}$, divided by $I$.
 			\item If $\epsilon'_1 > \epsilon'_0$, then $\circMid = C_0$, otherwise, $\circMid = C_1$.
 		\end{enumerate}
-		WLOG, say that $\circMid = C_0$, then
-		\begin{align*}
-			\gamma = Pr[\epsilon'_1 > \epsilon'_0] &= \Pr[\sum_{j} S_{1, j} > \sum_{j} S_{0, j}]\\
-			&\geq \Pr\left[\sum_{j} S_{1, j} > \frac{I\epsilon'}{2}\right] \cdot \Pr\left[\sum_{j} S_{0, j} < \frac{I\epsilon'}{2}\right].
-		\end{align*}
-		We then have that
-		\begin{align*}
-			\Pr\left[\sum_{j} S_{1, j} > I\epsilon' \cdot \half\right] \geq 1 - \exp\left( -\frac{I\eps'}{2^2 \cdot 3}\right) =  1 - \exp\left( -\frac{I\eps'}{96}\right). \tag{by the Chernoff bound}
-		\end{align*}
-		And, if iO distinguishing advantage is at most $\alpha$ and $\delta = \frac{\eps'}{2\alpha} - 1$
-		\begin{align*}
-			\Pr\left[\sum_{j} S_{0, j} < \frac{I\epsilon'}{2}\right] &= 1 - Pr\left[\sum_{j} S_{0, j} \geq  (1 + \delta) I\alpha\right]
-			\geq 1 - \exp\left( - I \alpha \left(\frac{\eps'}{2\alpha} - 1\right)^2 \cdot \frac{1}{3} \right) \tag{by the Chernoff bound}\\
-			&\geq 1 - \exp\left( - \frac{I\eps'^2}{12\alpha}\right) \geq 1 - \exp\left(-\frac{I\eps'}{12}\right). \tag{as $\eps' > \alpha$}.
-		\end{align*}
-		So we finally have that
-		\begin{equation}
-			\Pr[\eps'_1 > \eps'_0] \geq 1 - \exp\left(-\frac{I\eps'}{12}\right) - \exp\left( -\frac{I\eps'}{96}\right) \geq 1 - 2\exp\left( -\frac{I\eps'}{96}\right). 
-		\end{equation}
-		
-		Setting $I \geq \frac{\ln2 \cdot 96\left(\ln n - \ln \left(1 - \frac{\eps}{10d}\right)\right)}{\eps'} \in \poly(n, 1/\eps, 1/\eps')$, we have that
-		\begin{align*}
-			\gamma^n &\geq \left(1 - 2\exp\left( -\frac{I\eps'}{96}\right)\right)^n \\
-			&\geq 1 - 2n \cdot \exp\left( -\frac{I\eps'}{96}\right) = 1 - 2n \cdot \exp\left( -\left(\ln n + \ln\left(1 - \frac{\eps}{10d}\right)\right) \cdot 2\right)\\
-			&= 1 - \left(1 - \frac{\eps}{10d}\right) = \frac{\eps}{10d}
-		\end{align*}
-		as desired.
-		% TODO: move to Appendix!!!
+
+		We differ the proof that $\gamma^n \geq \frac{\epsilon}{10d}$ to \cref{appendix:paramHybB}.
+			% TODO: move to Appendix!!!
 	\end{proof}
 	
 \end{lemma}
@@ -324,43 +295,3 @@ which contain $v$.
 	\end{algorithmic}
 	\label{alg:neighbHyb2}
 \end{algorithm}
-
-	\begin{lemma}
-		The game in $\Hyb_1 (1a)$ is indistinguishable from $\Hyb_0$.
-		\begin{proof}
-			As the functionality of $\circNeigb$ in $\Hyb_0$ equals that of $\Hyb_1 (1a)$,
-			we have indistinguishable simply from the definition of indistinguishable obfuscation.
-		\end{proof}
-	\end{lemma}
-
-	\begin{lemma}
-		The game in $\Hyb_1 (1b)$ is indistinguishable from $\Hyb_1 (1a)$.
-		\begin{proof}
-			Here we argue that if the game in $\Hyb_1 (1b)$ is distinguishable from
-			$\Hyb_1 (1a)$, then we can construct an adversary, $\adversB$, which can break the security of the PRF
-			at the punctured point. 
-
-			% TODO: wait is this trivial??? Like just use the extractor definition???
-			% But then wait, something is not right here
-			% Something 
-
-			% TODO: change game
-		\end{proof}
-	\end{lemma}
-
-	\begin{lemma}
-		The game in $\Hyb_1 (2a)$ is indistinguishable from $\Hyb_0$ and, by the inductive hypothesis, all previous hybrids.
-		\begin{proof}
-			Again, we have that the circuit for $\circNeigb$ is the same in $\Hyb_0$ and $\Hyb_1 (2a)$.
-			Thus, by the definition of indistinguishable obfuscation, these games are indistinguishable.
-		\end{proof}
-	\end{lemma}
-
-	\begin{lemma}
-		The game in $\Hyb_1 (2b)$ is indistinguishable from $\Hyb_1 (2a)$ and, by the inductive hypothesis, all previous hybrids.
-		\begin{proof}
-			TODO: PRF security + extractor part
-		\end{proof}
-	\end{lemma}
-
-	

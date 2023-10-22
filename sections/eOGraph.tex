@@ -5,11 +5,10 @@
 \newcommand{\obfFN}{\mathcal{O}}
 \newcommand{\circMid}{C^{\text{Mid}}}
 
-\section{Using Weak Extractible Obfuscation}
-
-\subsection{Graph Randomized Traversal}
+\section{DAG Label Obfuscation from iO}
+\subsection{DAG Randomized Traversal}
 Say that we have a sparse, potentially exponentially sized, graph $\graph = (\verts, \edges)$
-and $\forall v \in \verts, \deg(v) = d$. Moreover, if the graph is a DAG, for simplicity,
+and $\forall v \in \verts, \deg(v) \leq d$. Moreover, for simplicity,
 assume that for all $v$, 
 $$
 \deg^{-1}(v) = \big|\set{u \in V \mid \exists j \in [d], \Gamma(u)_j = v}\big| \leq d.
@@ -21,22 +20,21 @@ We also require that $\graph$ is equipped with a neighbor function, $\Gamma$, wh
 % (TODO: padding).
 We define a randomized and keyed labelling function $\phi: \binSet^\lambda \times \verts \rightarrow \binSet^{\poly(\lambda)}$ 
 such that given, $\phi(K, v_0)$ for root $v_0$, an adversary, $\advers$, which does not know a path from $v_0$ to $v$,
+% TODO: defn extractor??
 \begin{equation}
 	\label{eq:guessPhi}
 	\Pr[\advers(\mathcal{O}(\circNeigb), v_0, v, \labelFunc(K, v_0)) = \labelFunc(K, v)] \leq \epsilon
 \end{equation}
 for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$
-if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string;
-and, $\mathcal{O}$ represents an indistinguishable obfuscator.
-We fix $\epsilon \leq \negl(\lambda)$.
+if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string.
+We fix the adversary's advantage to $\epsilon \leq \negl(\lambda)$ as we will need to show
+that a set of a potentially exponential number of games \emph{does not have exponential security loss}.
 
 \subsection{Instantiation}
 We define 
-\begin{equation*}
-	\labelFunc(K, v) = F(K, v).
-\end{equation*}
-
-We can now define $\circNeigb$:
+$
+	\labelFunc(K, v) = F(K, v)
+$ for $K \randomGet \set{0, 1}^\lambda$, and we can now define $\circNeigb$:
 \begin{algorithm}[H]
 	\caption{
 		The circuit for the neighbor function, $\circNeigb$.
@@ -60,7 +58,7 @@ We are going to show that \cref{eq:guessPhi} holds by first showing that
 the non-existence of an extractor to find a path from $v_0$ to $v$ implies that $\advers$
 necessarily does not know $\phi(K, c)$ for a $c \in C_V \subset V$ where the vertices in $C_V$ border 
 a graph cut which separates $v_0$ and $v$. Then, we inductively build up a series of games to show that
-$\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are the vertices on the right-hand side of the cut.
+$\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are the vertices on the side of the cut containing $v$.
 
 % TODO: define P way above
 \begin{lemma}[Base Case Game]
@@ -74,7 +72,7 @@ $\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are t
 	\end{equation}
 		We define $C_V \subset V$ to be
 	\begin{equation*}
-		\set{ u \mid (w, u) \in C_E \text{ and } u \text { on the side of } v} \bigcup \set{ v \mid (w, u) \in C_E \text{ and } u \text { on the side of } v}.
+		\set{ u \mid (w, u) \in C_E \text{ and } u \text { on the side of } v} \bigcup \set{ w \mid (w, u) \in C_E \text{ and } w \text { on the side of } v}.
 	\end{equation*}
 	In words, $C_V$ are the vertices just adjacent to the cut and on the same side as $v$.
 	\begin{proof}
@@ -82,7 +80,7 @@ $\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are t
 		$E$, which finds a path from $v_0$ to $v$ with non-negligible probability.
 
 		Assume that for every possible cut, $\advers$ is able to produce a single label in this cut for a vertex $w$.
-		Then, we note that there must be at least 1 path from $v_0$ to $w$ and $v$ as otherwise, $w$ would not be in the cut.
+		Then, we note that there must be at least 1 path from $v_0$ to $w$ and from $w$ to $v$ as otherwise, $w$ would not be in the cut.
 		Moreover, we note that $\advers$ must be able to produce a label for all vertices on at least one path
 		from $v_0$ to $w$ as otherwise, we can change the cut to include the edges between where
 		$\advers$ is able to produce a label and not able to produce a label. Using the same argument,
@@ -112,9 +110,9 @@ which contain $v$.
 \begin{lemma}[Inductive Game Hypothesis]
 	Let $H \subset V$ be a ``hard'' set of vertices such that $\advers$ cannot, with non-negligible probability, produce 
 	$\phi(K, h)$ where $h \in H$. Note that the base case has $H = C_V$. 
-	Assuming BLAH
-	Then, 
-	for any $v \notin H$ and $w \in \Gamma(h)$ for all $h \in H$, we have that
+	Assuming adaptive security of constrained PRFs, one way functions, and the existence of indistinguishable obfuscation,
+	we then have
+	for any $w \in \Gamma(h)$ for all $h \in H$, 
 	\begin{equation*}
 		% TODO: change all to just <
 		% TODO: maybe we nee to fix \eps
@@ -125,17 +123,17 @@ which contain $v$.
 		\begin{itemize}
 			\item $\Hyb_0$: In the first hybrid, the following game is played
 				\begin{enumerate}
-					\item $K \gets \binSet^{\lambda'}$ and $\phi(K, v_0) = (F(K, v_0), v)$ where $K$ is some fixed secret drawn from a random distribution
-					\item The challenger generates $\mathcal{O}(\circNeigb)$ and gives the program to $\advers$
 					\item The challenger gives the adversary $w^*$ in plaintext.
+					\item $K \gets \binSet^{\lambda'}$ and $\phi(K, v_0) = (F(K, v_0), v_0)$ where $K$ is some fixed secret drawn from a uniform distribution
+					\item The challenger generates $\mathcal{O}(\circNeigb)$ and gives the program to $\advers$
 					\item $\advers$ outputs guess $g$ and wins if $g = \phi(K, w^*)$ %hmmm... do we give w?
 				\end{enumerate}
 			
-			\item $\Hyb_1$: We replace $\circNeigb$ with $\circNeigb$ as defined in \ref{alg:neighbHyb1}.
+			\item $\Hyb_1$: We replace $\circNeigb$ with $\circNeigb$ as defined in circuit~\ref{alg:neighbHyb1}.
 			Fix the constant $z^* = f(F(K, w^*))$
 			% and $y^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, y^*_d = f(F(K, \Gamma(w^*)_d))$.
 			\item $\Hyb_{2, 1}$
-			We replace \cref{alg:neighbHyb1} with \cref{alg:neighbHyb2} where we 
+			We replace circuit~\ref{alg:neighbHyb1} with circuit~\ref{alg:neighbHyb2} where we 
 			set $Y^* = (1, y)$ such that $\Gamma(y)_1 = w^*$. So then, we have that
 			have $F(K, \Gamma(y)_1) = \bot$. Moreover, we set the punctured set, $S$ to $\emptyset$ (i.e.\ we do not puncture the PRF).
 			\item $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
@@ -155,7 +153,7 @@ which contain $v$.
 		an adversaries advantage between games in $\Hyb_0$ and $\Hyb_3$ is at most $\epsilon / 2$.
 		Thus, if $\advers$ can produce $\phi(K, v) = (\sigma_v, v)$ with advantage $\epsilon / 2$
 		in $\Hyb_3$, then $\advers$
-		can find a pre-image for $z*$ under $f$ with non-negligible probability and thus break the security of a one way function.
+		can find a pre-image for $z^*$ under $f$ with non-negligible probability and thus break the security of a one way function.
 		We then have that the advantage of the adversary in $\Hyb_0$ cannot be more than $\epsilon$.
 	\end{proof}
 \end{lemma}
@@ -165,9 +163,10 @@ which contain $v$.
 	% TODO: workout
 	$\Hyb_0$ and $\Hyb_1$ are distinguishable with advantage at most $\epsilon / 10$.
 	\begin{proof}
-		Note that for all inputs $(z, v)$ to $\circNeigb$ as defined in \cref{alg:neighb} and \cref{alg:neighbHyb1}
+		Assume towards contradiction that $\eps \in \poly(1/\lambda)$.
+		Note that for all inputs $(z, v)$ to $\circNeigb$ as defined in circuit~\ref{alg:neighb} and circuit~\ref{alg:neighbHyb1}
 		are equivalent and thus indistinguishable by the definition of indistinguishable obfuscation.
-		So, if $\eps \in \poly(\lambda)$, then an adversary cannot distinguish the hybrids with probability more than $\epsilon / 8$.
+		So, if $\eps \in \poly(\lambda)$, then an adversary cannot distinguish the hybrids with probability more than $\epsilon / 10$.
 	\end{proof}
 \end{lemma}
 
@@ -188,7 +187,7 @@ which contain $v$.
 		Note that $C_0$ and $C_1$ differs on at most 1 input (which is the appended vertex $y$ to $Y^*$);
 		call this input $\alpha$.
 		Then, $\circMid_i = C_0$ if $\alpha_i = 0$ and $\circMid_i = C_1$ if $\alpha_i = 1$.
-		So, if we build an adversary $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma$,
+		So, if we build an adversary $\adversB$ to tell if $\circMid_i = C_0$ or $\circMid_i = C_1$ with probability $\gamma$,
 		we have that $\adversB(C_0, C_1)$ can tell if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
 		Thus, $\adversB$ can reconstruct $\alpha$ with probability at least $\gamma^n$.
 		Note that this implies that $\adversB$ can learn $\phi(K, y)$ where $y \in H$ by construction
@@ -219,9 +218,11 @@ which contain $v$.
 \end{lemma}
 
 \begin{lemma}
-	The game in $\Hyb_{2, \deg^{-1}(w^*)}$ is indistinguishable from $\Hyb_3$.
+	The game in $\Hyb_{2, \deg^{-1}(w^*)}$ is indistinguishable from $\Hyb_3$ with probability
+	at most $\eps/10$.
 	\begin{proof}
-		The indistinguishably follows directly from the definition of indistinguishable obfuscation.
+		As with \cref{lemma:hybA}, 
+		the indistinguishably follows directly from the definition of indistinguishable obfuscation.
 	\end{proof}
 \end{lemma}
 
@@ -230,8 +231,9 @@ which contain $v$.
 	% TODO: assuming this then that
 	The game in $\Hyb_{3}$ is indistinguishable from $\Hyb_4$.
 	\begin{proof}
-		We now show that if the advantage of $\advers$ is greater than $\eps/8$, then we can
-		create a reduction, $\adversB$, which can break the selective security of the PRF at the punctured point.
+		Assume towards contradiction that $\eps \in \poly(1/\lambda)$.
+		We now show that if the advantage of $\advers$ is greater than $\eps/10$, then we can
+		create a reduction, $\adversB$, which can break the security of the PRF at the punctured point.
 		$\adversB$ first chooses a message $w^*$ and submits this to the constrained PRF challenger and gets back the punctured PRF key
 		$K(\set{w^*})$ and challenge $a$. $\adversB$ then runs the experiment in $\Hyb_{2, \deg^{-1}(w^*)}$
 		except that $z^* = f(a)$. If $a$ is the output of the PRF, then we are in $\Hyb_{2, \deg^{-1}(w^*)}$,

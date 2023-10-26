@@ -1,7 +1,7 @@
 \section{Proof of Parameters in Lemma~\ref{lemma:hybB}}
 \label{appendix:paramHybB}
 
-As a reminder, we set $I =\left\lceil \frac{\ln2 \cdot 12\left(\ln n - \ln \left(1 - \frac{\eps}{10d}\right)\right)}{\eps'} \right\rceil$ where $I$
+As a reminder, we set $I =\left\lceil \frac{12\left(\ln 2 + \ln n - \ln\left(1 - \eps\right) + \ln 2\right)}{\eps'} \right\rceil$ where $I$
 is the number of iterations of the experiment define in \cref{lemma:hybB}.
 
 WLOG, say that $\circMid = C_0$, then
@@ -25,10 +25,10 @@ So we finally have that
 	\Pr[\eps'_1 > \eps'_0] \geq 1 - \exp\left(-\frac{I\eps'}{12}\right) - \exp\left( -\frac{I\eps'}{12}\right) \geq 1 - 2\exp\left( -\frac{I\eps'}{12}\right). 
 \end{equation}
 
-Setting $I \geq \frac{12\left(\ln n - \ln\left(1 - \frac{\eps}{10d}\right) + \ln 2\right)}{\eps'} \in \poly(n, 1/\eps, 1/\eps')$, we have that
+Setting $I \geq \frac{12\left(\ln 2 + \ln n - \ln\left(1 - \eps\right) + \ln 2\right)}{\eps'} \in \poly(n, 1/\eps, 1/\eps')$, we have that
 \begin{align*}
-	\gamma^n &\geq \left(1 - 2\exp\left( -\frac{I\eps'}{12}\right)\right)^n \\
-	&\geq 1 - 2n \cdot \exp\left( -\frac{I\eps'}{12}\right) = 1 - 2n \cdot \exp\left(-\ln n + \ln\left(1 - \frac{\eps}{10d}\right) - \ln 2\right)\\
-	&= 1 - \left(1 - \frac{\eps}{10d}\right) = \frac{\eps}{10d}
+	\gamma^n &\leq \left(1 - 2\exp\left( -\frac{I\eps'}{12}\right)\right)^n \\
+	&\leq 1 - 2n \cdot \exp\left( -\frac{I\eps'}{12}\right) = 1 - 2n \cdot \exp\left(-\ln n + \ln\left(1 - \eps\right) - \ln 2\right)\\
+	&= 1 - \left(1 - \eps\right) = \eps
 \end{align*}
 as desired.

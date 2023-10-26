@@ -19,7 +19,7 @@ that $\deg^{-1}(\cdot) = O(1)$ but for the sake of simplicity we fix $\deg^{-1}(
 We also require that $\graph$ is equipped with a neighbor function, $\Gamma$, which can be computed in polynomial time.
 % (TODO: padding).
 We define a randomized and keyed labelling function $\phi: \binSet^\lambda \times \verts \rightarrow \binSet^{\poly(\lambda)}$ 
-such that given, $\phi(K, v_0)$ for root $v_0$, an adversary, $\advers$, which does not know a path from $v_0$ to $v$,
+such that given, $\phi(K, v_0)$ for root $v_0$, a PPT adversary which runs in time at most $T(\lambda)$, $\advers$, which does not know a path from $v_0$ to $v$,
 % TODO: defn extractor??
 \begin{equation}
 	\label{eq:guessPhi}
@@ -27,8 +27,10 @@ such that given, $\phi(K, v_0)$ for root $v_0$, an adversary, $\advers$, which d
 \end{equation}
 for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$
 if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string.
-We fix the adversary's advantage to $\epsilon \leq \negl(\lambda)$ as we will need to show
-that a set of a potentially exponential number of games \emph{does not have exponential security loss}.
+We fix the adversary's advantage to $\epsilon < \poly(\lambda)$ and runtime to $T(\lambda) \leq \poly(\lambda, \frac{1}{\eps})$
+as we will need to show
+that a set of a potentially exponential number of games \emph{does not have exponential security loss}
+nor or \emph{reduce down to security against an exponentially strong adversary}.
 
 \subsection{Instantiation}
 We define 
@@ -180,6 +182,7 @@ which contain $v$.
 		$\advers$ can produce a label $\phi(K, h)$ for $h \in H$.
 
 		First, assume towards contradiction that there exists an adversary $\advers$ that can distinguish two consecutive hybrids
+		in $O(T')$ time
 		with polynomial advantage $\epsilon' > \epsilon / 10d$.
 		Following the proof sketch in \cite{ishai2015public} say that the input size to $\circNeigb$ is $n$.
 		Also, let $C_0$ be the circuit from the first hybrid and $C_1$ the one from the second.
@@ -196,11 +199,12 @@ which contain $v$.
 		by obfuscating a program which calls $\circNeigb$ internally and returns $\bot$ for the $j$-th input
 		if the input vertex is $u$ such that $(j, u) \in Y^*$.
 
-		So now, we just need to build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \frac{\epsilon}{10d}$.
+		So now, we just need to build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \epsilon$.
 
 		Then, $\advers$ can distinguish between $C^M$ via the following:
 		\begin{enumerate}
-			\item Run $I =\left\lceil \frac{12\left(\ln n - \ln\left(1 - \frac{\eps}{10d}\right) + \ln 2\right)}{\eps'} \right\rceil$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
+			\item Run $I =\left\lceil 
+			\frac{12\left(\ln 2 + \ln n - \ln\left(1 - \eps\right) + \ln 2\right)}{\eps'} \right\rceil$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
 				\begin{enumerate}
 					\item Sample a random obfuscation of $C_b$ via re-obfuscating the existing $C_b$
 					\item Sample a random obfuscation of $\circMid_i$ via re-obfuscating $\circMid_i$
@@ -210,6 +214,9 @@ which contain $v$.
 			Note that we can estimate $\epsilon'_b$ as the number of successful runs, which we will denote $\sum_{j \in [I]} S_{i, j}$, divided by $I$.
 			\item If $\epsilon'_1 > \epsilon'_0$, then $\circMid = C_0$, otherwise, $\circMid = C_1$.
 		\end{enumerate}
+
+		Note that $\adversB$ runs in time $O(T' I)$. So, if we set the upper-bound on the runtime of $\advers$ in \cref{eq:guessPhi}
+		to $O(T' I))$, then $\adversB$ can learn $\phi(K, y)$ with probability $\gamma^n \geq \epsilon$.
 
 		We differ the proof that $\gamma^n \geq \frac{\epsilon}{10d}$ to \cref{appendix:paramHybB}.
 			% TODO: move to Appendix!!!

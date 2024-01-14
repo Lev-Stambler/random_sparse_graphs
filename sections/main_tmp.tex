@@ -1,14 +1,7 @@
-\newcommand{\labelFunc}{\phi}
-\newcommand{\imageFn}{\text{Image}}
-\newcommand{\pathSuffix}{\text{Suff}}
-\newcommand{\pathSet}{\mathcal{P}}
-\newcommand{\obfFN}{\mathcal{O}}
-\newcommand{\circMid}{C^{\text{Mid}}}
-
-\section{DAG Label Obfuscation from iO}
+\section{DAG Label Obfuscation from Additive Overhead iO}
 \subsection{DAG Randomized Traversal}
-Say that we have a sparse, potentially exponentially sized, graph $\graph = (\verts, \edges)$
-and $\forall v \in \verts, \deg(v) \leq d$. Moreover, for simplicity,
+Say that we have a sparse, potentially exponentially sized, graph $\graph = (\verts, \edges)$ with polynomial depth $D$,
+and forall $v \in \verts, \deg(v) \leq d$. Moreover, for simplicity,
 assume that for all $v$, 
 $$
 \deg^{-1}(v) = \big|\set{u \in V \mid \exists j \in [d], \Gamma(u)_j = v}\big| \leq d.
@@ -25,7 +18,7 @@ such that given, $\phi(K, v_0)$ for root $v_0$, a PPT adversary which runs in ti
 	\label{eq:guessPhi}
 	\Pr[\advers(\mathcal{O}(\circNeigb), v_0, v, \labelFunc(K, v_0)) = \labelFunc(K, v)] \leq \epsilon
 \end{equation}
-for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$
+for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$ and the circuit is padded to size $\circSize$.
 if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string.
 We fix the adversary's advantage to $\epsilon < \poly(\lambda)$ and runtime to $T(\lambda) \leq \poly(\lambda, \frac{1}{\eps})$
 as we will need to show
@@ -39,7 +32,7 @@ $
 $ for $K \randomGet \set{0, 1}^\lambda$, and we can now define $\circNeigb$:
 \begin{algorithm}[H]
 	\caption{
-		The circuit for the neighbor function, $\circNeigb$.
+		The circuit for the neighbor function, $\circNeigb$ padded out to size $\circSize$.
 	}
 	\begin{algorithmic}[1]
 		\Function{$\circNeigb$}{$X, v$}
@@ -56,11 +49,17 @@ $ for $K \randomGet \set{0, 1}^\lambda$, and we can now define $\circNeigb$:
 	\label{alg:neighb}
 \end{algorithm}
 
-We are going to show that \cref{eq:guessPhi} holds by first showing that
-the non-existence of an extractor to find a path from $v_0$ to $v$ implies that $\advers$
+% TODO: more concrete somewhere with overhead
+We are going to show that \cref{eq:guessPhi} for $\circSize = O(D \cdot \text{overhead})$ where ``overhead'' is the additive overhead of $\iO$ obfuscation.
+We will do this by first showing that the non-existence of an extractor to find a path from $v_0$ to $v$ implies that $\advers$
 necessarily does not know $\phi(K, c)$ for a $c \in C_V \subset V$ where the vertices in $C_V$ border 
-a graph cut which separates $v_0$ and $v$. Then, we inductively build up a series of games to show that
+a graph cut which separates $v_0$ and $v$. Note that the base case holds for all $S \geq \poly(\lambda)$. 
+
+
+Then, we inductively build up a series of games to show that
 $\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are the vertices on the side of the cut containing $v$.
+At each inductive step, we restrict the security game to hold for $S \geq O(\inductiveInd \cdot \text{overhead})$ where $\inductiveInd$ is the number of calls to induction.
+% TODO: note no more than D inductive calls
 
 % TODO: define P way above
 \begin{lemma}[Base Case Game]
@@ -138,13 +137,13 @@ which contain $v$.
 			We replace circuit~\ref{alg:neighbHyb1} with circuit~\ref{alg:neighbHyb2} where we 
 			set $Y^* = (1, y)$ such that $\Gamma(y)_1 = w^*$. So then, we have that
 			have $F(K, \Gamma(y)_1) = \bot$. Moreover, we set the punctured set, $S$ to $\emptyset$ (i.e.\ we do not puncture the PRF).
-			\item $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
+			\item $\Hyb_{2, j}$ for $j \in \set{2, \dots, \deg^{-1}(w^*)}$
 			We replace $Y^*$ with $Y^* \cup (j, y)$ such that $\Gamma(y)_j = w^*$.
 			Note after the last of these hybrids, we have that $F(K, w^*)$ is always set to $\bot$.
 			\item $\Hyb_3$: We puncture the PRF at $w^*$ and set $S = \set{w^*}$.
 			\item $\Hyb_4$: Set $z^* = f(t)$ where $t$ is chosen at random %TODO: specify field size
 		\end{itemize}
-		Finally, we can note that if $\Hyb_0 \compInd \Hyb_2$,
+		Finally, we can note that if $\Hyb_0 \compInd \Hyb_4$,
 		\begin{equation*}
 			\Pr[\advers(\circNeigb, v_0, w, \phi(K, v_0)) = \phi(K, w)] 
 			\compInd
@@ -178,30 +177,64 @@ which contain $v$.
 	is distinguishable with advantage at most $\epsilon / (10d)$. Thus, $\Hyb_1$ and $\Hyb_{2, \deg^{-1}(w^*)}$ are distinguishable with advantage at most $\epsilon / 10$.
 	\begin{proof}
 		This proof will be a modification of the proof in \cite{ishai2015public} for the simple case of weak extractible obfuscation.
-		The key idea is that if a hybrid is distinguishable with advantage more than $\epsilon / 10d$, then
-		$\advers$ can produce a label $\phi(K, h)$ for $h \in H$.
+		The key idea lies on two observations:
+		\begin{enumerate}[labelsep=0.1em]
+			\item We can go from $\Hyb_{2, j - 1}$ (or $\Hyb_1$) to a ``padded out'' version of $\Hyb_{2, j}$ by obfuscating a program which calls $\circNeigb$ internally and returns $\bot$ for the $j$-th input.
+			\item We can go from $\Hyb_{2, j - 1}$ (or $\Hyb_1$) to a padded out version of itself.
+			\item If an adversary can produce $\Hyb_{2, j - 1}$ (or $\Hyb_1$) and $\Hyb_{2, j}$ which are of the same size and can distinguish them with advantage at least $\epsilon / 10d$,
+			then we can build an adversary, $\adversB$, which can produce a label $\phi(K, h)$ for $h \in H$ in $\Hyb_0/ \Hyb_1$.
+		\end{enumerate}
 
 		First, assume towards contradiction that there exists an adversary $\advers$ that can distinguish two consecutive hybrids
 		in $O(T')$ time
 		with polynomial advantage $\epsilon' > \epsilon / 10d$.
-		Following the proof sketch in \cite{ishai2015public} say that the input size to $\circNeigb$ is $n$.
+		% Following the proof sketch in \cite{ishai2015public} say that the input size to $\circNeigb$ is $n$.
+		For simplicity, say that the input size to all of our circuits is $n$.
 		Also, let $C_0$ be the circuit from the first hybrid and $C_1$ the one from the second.
 		Let $\circMid_i$ be a circuit such that $\circMid_i(X) = C_0(X)$ if $X_i = 0$ and $\circMid_i(X) = C_1(X)$ if $X_i = 1$.
-		Note that $C_0$ and $C_1$ differs on at most 1 input (which is the appended vertex $y$ to $Y^*$);
+		Note that by our construction of the hybrids, $C_0$ and $C_1$ differ on at most 1 input (which is the appended vertex $y$ to $Y^*$);
 		call this input $\alpha$.
 		Then, $\circMid_i = C_0$ if $\alpha_i = 0$ and $\circMid_i = C_1$ if $\alpha_i = 1$.
 		So, if we build an adversary $\adversB$ to tell if $\circMid_i = C_0$ or $\circMid_i = C_1$ with probability $\gamma$,
 		we have that $\adversB(C_0, C_1)$ can tell if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
 		Thus, $\adversB$ can reconstruct $\alpha$ with probability at least $\gamma^n$.
-		Note that this implies that $\adversB$ can learn $\phi(K, y)$ where $y \in H$ by construction
-		and thus gives our desired contradiction.
-		Moreover, we have that $\advers(C_0)$ (where $C_0 = \circNeigb$) can construct $C_1$ (and thus $\circMid_i$)
-		by obfuscating a program which calls $\circNeigb$ internally and returns $\bot$ for the $j$-th input
-		if the input vertex is $u$ such that $(j, u) \in Y^*$.
+		Note that this implies that $\adversB$ can learn $\phi(K, y)$ where $y \in H$ (the set of hard-to-guess vertices) by construction.
+		But here we run into a problem, the game the distinguishing adversary plays between $C_0$ and $C_1$ (and so forth) does not give the circuits from \emph{both} games to $\advers$.
+		Rather, $\advers$ gets either the circuit $C_0$ or $C_1$.
+		Note though that given $C_0$, $\advers$ can construct a larger version of $C_1$ by obfuscating a program which calls $C_0$ internally and returns $\bot$ for the $j$-th input.
+		Call this larger circuit $C_1'$ with circuit size $\lambda'$.
+		Moreover, $\advers$ can construct a larger version of $C_0$, which we will call $C_0'$, by simply padding it out to the size of $C_1'$.
+		Now, if there exists a distinguishing adversary for this larger game with circuit size $\lambda'$, we can break the inductive hypothesis of the scheme with circuit size $\lambda$.
+
+		
+
+		\LS{Note that we are showing that if an adversary can distinguish between hybrids with a larger parameter size, then it can break the security of lower parameter hybrids. So, we then need to apply the same argument to the smaller parameter sized versions to update each recursive step. This basically means that we either only support poly-log depth (if we have multiplicative overhead iO) or we assume existance of additive overhead iO}
+		% https://eprint.iacr.org/2015/1023.pdf
+		Now, if $\adversB$ can distinguish $C_0, C_1$, we can create and adversary $\adversD$
+		which can output a label of a vertex in $H$ with probability $\gamma^n$.
+		$\adversD(C_0)$ proceeds as follows:
+		\begin{enumerate}
+			% TODO: this may not be the correct specification
+			\item Create a circuit $\iO(C_1')$ which calls $C_0$ internally but returns $\bot$ instead of the $j$-th output
+			if $v = y$. Also, create $\iO(C_0')$ to be the padded version of $C_0$ such that $\iO(C_0')$ and $\iO(C_1')$
+			are the same size.
+			\item Run $\adversB(\iO(C_0'), \iO(C_1'))$ $n$ times to get the differing input
+			string $m \in \set{0, 1}^n$. Return $m$.
+			% TODO: urr sizes do not match up vis a vis padding
+			% TODO: may be underspecified hybrid...
+		\end{enumerate}
+
+		% As $C_1$ can be created by an adversary with access to $C_0$, an adversary, $\adversD$, could then
+		% produce a label for a vertex in $H$ via simulating calls to $\adversB$.
+		% and thus gives our desired contradiction.
+		% Moreover, we have that $\advers(C_0)$ (where $C_0 = \circNeigb$) can construct $C_1$ (and thus $\circMid_i$)
+		% by obfuscating a program which calls $\circNeigb$ internally and returns $\bot$ for the $j$-th input
+		% if the input vertex is $u$ such that $(j, u) \in Y^*$.
 
 		So now, we just need to build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \epsilon$.
+		To do so, we make oracle calls to $\advers$:
 
-		Then, $\advers$ can distinguish between $C^M$ via the following:
+		% Then, $\advers$ can distinguish between $C^M$ via the following:
 		\begin{enumerate}
 			\item Run $I =\left\lceil 
 			\frac{12\left(\ln 2 + \ln n - \ln\left(1 - \eps\right) + \ln 2\right)}{\eps'} \right\rceil$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
@@ -215,11 +248,12 @@ which contain $v$.
 			\item If $\epsilon'_1 > \epsilon'_0$, then $\circMid = C_0$, otherwise, $\circMid = C_1$.
 		\end{enumerate}
 
-		Note that $\adversB$ runs in time $O(T' I)$. So, if we set the upper-bound on the runtime of $\advers$ in \cref{eq:guessPhi}
-		to $O(T' I))$, then $\adversB$ can learn $\phi(K, y)$ with probability $\gamma^n \geq \epsilon$.
+		Note that $\adversB$ runs in time $O(T' I)$. So, if we set the upper-bound on the runtime of the adversary in \cref{eq:guessPhi}
+		to $O(T' I))$, then $\adversB$ can learn $\phi(K, y)$ with probability $\gamma^n \geq \frac{\epsilon}{10d}$.
 
-		We differ the proof that $\gamma^n \geq \frac{\epsilon}{10d}$ to \cref{appendix:paramHybB}.
-			% TODO: move to Appendix!!!
+		We differ the proof that $I$ is the correct choice of parameters such that
+		$\gamma^n \geq \frac{\epsilon}{10d}$ to \cref{appendix:paramHybB}.
+		% TODO: URRRR with \eps/10d???...
 	\end{proof}
 	
 \end{lemma}
@@ -264,6 +298,7 @@ which contain $v$.
 		 	\If{$\Gamma(v) = \emptyset$}
 				\State \Return $\bot$
 			\EndIf
+			
 			% \If{$v = w$}
 			% 	\State \Return $z^*_1, z^*_2, \dots, z^*_d$
 			% \EndIf
@@ -296,9 +331,9 @@ which contain $v$.
 			% 	\State \Return $z^*_1, z^*_2, \dots, z^*_d$
 			% \EndIf
 			\State $u_1, \dots u_d = \Gamma(v)$
-			\If{$\exists j \in [d], (j^*, v^*) \in Y^*$}
+			\While{$\exists j^* \in [d], (j^*, u_j) \in Y^*$}
 			 	\State Set $F(K, u_{j^*}) = \bot$
-			\EndIf
+			\EndWhile
 			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
 		\EndFunction
 	\end{algorithmic}

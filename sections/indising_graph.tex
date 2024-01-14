@@ -1,0 +1,42 @@
+\newcommand{\KA}{K_{a}}
+\newcommand{\KB}{K_{b}}
+
+\begin{algorithm}[H]
+	\caption{
+		The circuit for the neighbor function, $\circNeigb$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\circNeigb$}{$X, v$}
+			\If{$f(X) \neq f(F(\KA, v))$}
+				\State \Return $\bot$
+			\EndIf
+		 	\If{$\Gamma(v) = \emptyset$}
+				\State \Return $\bot$
+			\EndIf
+			\State $u_1, \dots u_d = \Gamma(v)$
+			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighb}
+\end{algorithm}
+
+
+\begin{algorithm}[H]
+	\caption{
+		$\circNeigb^*$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\circNeigb^*$}{$X, v, \set{w, z^*}$}
+			\If{$f(X) \neq f(F(K, v))$}
+				\State \Return $\bot$
+			\EndIf
+		 	\If{$\Gamma(v) = \emptyset$}
+				\State \Return $\bot$
+			\EndIf
+			\State $u_1, \dots u_d = \Gamma(v)$
+			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighb}
+\end{algorithm}
+

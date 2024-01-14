@@ -1,7 +1,8 @@
 \documentclass[11pt]{article}
-\usepackage{Custom}
 \usepackage{CSTheoryToolkitCMUStyle}
+\usepackage{Custom}
 \usepackage{cleveref}
+\usepackage{xcolor}
 % \usepackage{biblatex}
 % \addbibresource{CSTheoryToolkitCMUStyle.bib}
 
@@ -14,14 +15,22 @@
 \newcommand{\nVerts}{n}
 \newcommand{\embedFn}{\phi}
 \newcommand{\idealEmbedFn}{\Phi}
-\newcommand{\circNeigb}{C_\Gamma}
+\newcommand{\circSize}{S}
+\newcommand{\circNeigbBase}{C_\Gamma}
+\newcommand{\circNeigb}{{{\circNeigbBase}^{\circSize}}}
+\newcommand{\depth}{\text{dep}}
 \newcommand{\PRF}{\texttt{PRF}}
 \newcommand{\PRG}{\texttt{PRG}}
 \newcommand{\Hyb}{\texttt{Hyb}}
 \newcommand{\adversB}{\mathcal{B}}
+\newcommand{\iO}{i\mathcal{O}}
 
 \newcommand{\minEntropy}{I_\texttt{min}}
+\newcommand{\graphDepth}{D}
+
+\newcommand{\inductiveInd}{\mathcal{I}}
 %%%%%%%%%%%% End Commands %%%%%%%%%%%%
+\newcommand{\LS}[1]{{\textcolor{red}{#1}}}
 
 
 
@@ -47,7 +56,8 @@
 \title{Sparse Graph Label Randomization}
 % \maketitle
 \include{sections/prelims}
-\include{sections/eOGraph}
+% \include{sections/indising_graph}
+\include{sections/main_tmp}
 % \include{sections/sketch}
 % \include{sections/sketch2}
 % \include{sections/rom_general}

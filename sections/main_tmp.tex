@@ -25,6 +25,11 @@ as we will need to show
 that a set of a potentially exponential number of games \emph{does not have exponential security loss}
 nor or \emph{reduce down to security against an exponentially strong adversary}.
 
+\subsection{Using Constant Overhead iO}
+\label{def:constOverheadParam}
+
+We let $\paramScaleOverhead$ blah blah blah
+
 \subsection{Instantiation}
 We define 
 $
@@ -50,11 +55,10 @@ $ for $K \randomGet \set{0, 1}^\lambda$, and we can now define $\circNeigb$:
 \end{algorithm}
 
 % TODO: more concrete somewhere with overhead
-We are going to show that \cref{eq:guessPhi} for $\circSize = O(D \cdot \text{overhead})$ where ``overhead'' is the additive overhead of $\iO$ obfuscation.
+We are going to show that \cref{eq:guessPhi} for $\circSize = O(D \cdot \iOOverHead)$ where $\iOOverHead$ is the additive overhead of indistinguishable obfuscation.
 We will do this by first showing that the non-existence of an extractor to find a path from $v_0$ to $v$ implies that $\advers$
 necessarily does not know $\phi(K, c)$ for a $c \in C_V \subset V$ where the vertices in $C_V$ border 
 a graph cut which separates $v_0$ and $v$. Note that the base case holds for all $S \geq \poly(\lambda)$. 
-
 
 Then, we inductively build up a series of games to show that
 $\advers$ cannot learn \emph{any} $\phi(K, v)$ for $v \in V_1$ where $V_1$ are the vertices on the side of the cut containing $v$.
@@ -69,10 +73,12 @@ At each inductive step, we restrict the security game to hold for $S \geq O(\ind
 	$C_E \subset E$ which separates $v_0$ and $v$ and a set $C_V$ such that
 	\begin{equation}
 		\label{eq:cutLabel}
-		\Pr[\advers(\obfFN(\circNeigb), v_0, v, \phi(K, v_0)) \in \phi(K, C_V)] < \eps.
+		\Pr[\advers(\obfFN(\circNeigb), v_0, v, \phi(K, v_0)) \in \phi(K, C_V)] < \eps
 	\end{equation}
+		for any $\circSize \geq \poly(\lambda)$.
 		We define $C_V \subset V$ to be
 	\begin{equation*}
+		% TODO: there is a graph theoretic name for this.
 		\set{ u \mid (w, u) \in C_E \text{ and } u \text { on the side of } v} \bigcup \set{ w \mid (w, u) \in C_E \text{ and } w \text { on the side of } v}.
 	\end{equation*}
 	In words, $C_V$ are the vertices just adjacent to the cut and on the same side as $v$.
@@ -109,11 +115,13 @@ such that $\advers$ cannot find any label in $V_1$ where $V_1$ are the vertices 
 which contain $v$.
 
 \begin{lemma}[Inductive Game Hypothesis]
-	Let $H \subset V$ be a ``hard'' set of vertices such that $\advers$ cannot, with non-negligible probability, produce 
+	Let $H_\inductiveInd \subset V$ be a ``hard'' set of vertices for the $\inductiveInd$-th step of induction such that $\advers$ cannot, with non-negligible probability, produce 
 	$\phi(K, h)$ where $h \in H$. Note that the base case has $H = C_V$. 
-	Assuming adaptive security of constrained PRFs, one way functions, and the existence of indistinguishable obfuscation,
+	Assuming adaptive security of constrained PRFs, one way functions, and the existence of additive overhead indistinguishable obfuscation,
 	we then have
-	for any $w \in \Gamma(h)$ for all $h \in H$, 
+	% TODO: fix O at constant poly
+	% TODO: define q
+	for any $w \in \Gamma(h)$ and $\circSize \geq \paramScaleOverhead(\inductiveInd, \lambda)$ for all $h \in H$, 
 	\begin{equation*}
 		% TODO: change all to just <
 		% TODO: maybe we nee to fix \eps
@@ -185,61 +193,54 @@ which contain $v$.
 			then we can build an adversary, $\adversB$, which can produce a label $\phi(K, h)$ for $h \in H$ in $\Hyb_0/ \Hyb_1$.
 		\end{enumerate}
 
-		First, assume towards contradiction that there exists an adversary $\advers$ that can distinguish two consecutive hybrids
-		in $O(T')$ time
-		with polynomial advantage $\epsilon' > \epsilon / 10d$.
-		% Following the proof sketch in \cite{ishai2015public} say that the input size to $\circNeigb$ is $n$.
-		For simplicity, say that the input size to all of our circuits is $n$.
-		Also, let $C_0$ be the circuit from the first hybrid and $C_1$ the one from the second.
-		Let $\circMid_i$ be a circuit such that $\circMid_i(X) = C_0(X)$ if $X_i = 0$ and $\circMid_i(X) = C_1(X)$ if $X_i = 1$.
-		Note that by our construction of the hybrids, $C_0$ and $C_1$ differ on at most 1 input (which is the appended vertex $y$ to $Y^*$);
-		call this input $\alpha$.
+		For simplicity, say that the input size to all of our circuits is $n$. Let $s \in \Z$ such that $s \geq \paramScaleOverhead(\inductiveInd, \lambda)$.
+		Also, let $C_0^s$ be the circuit from the first hybrid and $C_1^s$ the one from the second.
+
+		At a high level, we will show that an adversary can create a ``padded out'' $C_1$ given only $C_0$. Then, 
+		if an adversary can distinguish between $C_0^{s'}$ and $C_1^{s'}$ for $s' \geq \paramScaleOverhead(\inductiveInd + 1, \lambda)$, we can break the inductive hypothesis.
+
+		First, given $C_0^s$, $\advers$ can construct a larger version of $C_1^{s'}$ by obfuscating a program which calls $C_0^s$ internally and returns $\bot$ for the $j$-th input of $w$.
+		$\advers$ also then produces $C_0^s$ which is $C^0$ padded out to the size of $C_1^{s'}$.
+		% TODO: not v precise
+		% TODO: add label
+		Note that we define $\paramScaleOverhead(\inductiveInd + 1, \lambda) - \paramScaleOverhead(\inductiveInd, \lambda)$ in \cref{def:constOverheadParam} to be
+		at least as large as the difference between $C_0^s$ and $C_1^{s'}$.
+		% \linebreak
+
+		% Call this larger circuit $C_1'$ with circuit size $\lambda'$.
+		% Moreover, $\advers$ can construct a larger version of $C_0$, which we will call $C_0'$, by simply padding it out to the size of $C_1'$.
+		% Now, if there exists a distinguishing adversary for this larger game with circuit size $\lambda'$, we can break the inductive hypothesis of the scheme with circuit size $\lambda$.
+		Now, assume towards contradiction that there exists an adversary $\advers$ that can distinguish $C_0^{s'}$ and $C_1^{s'}$ with advantage $\epsilon' > \epsilon / 10d$
+		in $O(T')$ time with polynomial advantage $\epsilon' > \epsilon / 10d$.
+		Let $\circMid_i$ be a circuit such that $\circMid_i(X) = C_0(X)$ if $X_i = 0$ and $\circMid_i(X) = C_1(X)$ if $X_i = 1$.\\
+		We can see that $C_0^{s'}$ and $C_1^{s'}$ differ on at most 1 input which we will call $\alpha$. %(which is the appended vertex $y$ to $Y^*$);
+		% call this input $\alpha$.
 		Then, $\circMid_i = C_0$ if $\alpha_i = 0$ and $\circMid_i = C_1$ if $\alpha_i = 1$.
-		So, if we build an adversary $\adversB$ to tell if $\circMid_i = C_0$ or $\circMid_i = C_1$ with probability $\gamma$,
-		we have that $\adversB(C_0, C_1)$ can tell if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
-		Thus, $\adversB$ can reconstruct $\alpha$ with probability at least $\gamma^n$.
-		Note that this implies that $\adversB$ can learn $\phi(K, y)$ where $y \in H$ (the set of hard-to-guess vertices) by construction.
-		But here we run into a problem, the game the distinguishing adversary plays between $C_0$ and $C_1$ (and so forth) does not give the circuits from \emph{both} games to $\advers$.
-		Rather, $\advers$ gets either the circuit $C_0$ or $C_1$.
-		Note though that given $C_0$, $\advers$ can construct a larger version of $C_1$ by obfuscating a program which calls $C_0$ internally and returns $\bot$ for the $j$-th input.
-		Call this larger circuit $C_1'$ with circuit size $\lambda'$.
-		Moreover, $\advers$ can construct a larger version of $C_0$, which we will call $C_0'$, by simply padding it out to the size of $C_1'$.
-		Now, if there exists a distinguishing adversary for this larger game with circuit size $\lambda'$, we can break the inductive hypothesis of the scheme with circuit size $\lambda$.
-
-		
-
-		\LS{Note that we are showing that if an adversary can distinguish between hybrids with a larger parameter size, then it can break the security of lower parameter hybrids. So, we then need to apply the same argument to the smaller parameter sized versions to update each recursive step. This basically means that we either only support poly-log depth (if we have multiplicative overhead iO) or we assume existance of additive overhead iO}
-		% https://eprint.iacr.org/2015/1023.pdf
-		Now, if $\adversB$ can distinguish $C_0, C_1$, we can create and adversary $\adversD$
-		which can output a label of a vertex in $H$ with probability $\gamma^n$.
-		$\adversD(C_0)$ proceeds as follows:
-		\begin{enumerate}
-			% TODO: this may not be the correct specification
-			\item Create a circuit $\iO(C_1')$ which calls $C_0$ internally but returns $\bot$ instead of the $j$-th output
-			if $v = y$. Also, create $\iO(C_0')$ to be the padded version of $C_0$ such that $\iO(C_0')$ and $\iO(C_1')$
-			are the same size.
-			\item Run $\adversB(\iO(C_0'), \iO(C_1'))$ $n$ times to get the differing input
-			string $m \in \set{0, 1}^n$. Return $m$.
-			% TODO: urr sizes do not match up vis a vis padding
-			% TODO: may be underspecified hybrid...
-		\end{enumerate}
-
+		So, if we build an adversary $\adversB$ to tell if $\circMid_i = C_0^{s'}$ or $\circMid_i = C_1^{s'}$ with probability $\gamma$,
+		we have that $\adversB(C_0^{s'}, C_1^{s'})$ can be used to check if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
+		So then, $\adversB$ can be used to learn $\phi(K, \alpha)$ with probability at least $\gamma^n$.
+		We then have that because $\alpha \in H$ and the initial circuit has size $s \geq \paramScaleOverhead(\inductiveInd, \lambda)$, $\adversB$ can break the inductive hypothesis!\\
+		\linebreak
+		% 
+		% Now, if $\adversB$ can distinguish $C_0^{s'}, C_1^{s'}$, we can create and adversary $\adversD$
+		% which can output a label of a vertex in $H$ with probability $\gamma^n$.
+		% $\adversD(C_0^{s'}, C_1^{s'})$ proceeds by running $\adversB(\iO(C_0'), \iO(C_1'))$ $n$ times to get the differing input
 		% As $C_1$ can be created by an adversary with access to $C_0$, an adversary, $\adversD$, could then
 		% produce a label for a vertex in $H$ via simulating calls to $\adversB$.
 		% and thus gives our desired contradiction.
 		% Moreover, we have that $\advers(C_0)$ (where $C_0 = \circNeigb$) can construct $C_1$ (and thus $\circMid_i$)
 		% by obfuscating a program which calls $\circNeigb$ internally and returns $\bot$ for the $j$-th input
 		% if the input vertex is $u$ such that $(j, u) \in Y^*$.
-
-		So now, we just need to build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \epsilon$.
-		To do so, we make oracle calls to $\advers$:
-
-		% Then, $\advers$ can distinguish between $C^M$ via the following:
+		To build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \epsilon$, we will make oracle calls to $\advers$:
 		\begin{enumerate}
 			\item Run $I =\left\lceil 
 			\frac{12\left(\ln 2 + \ln n - \ln\left(1 - \eps\right) + \ln 2\right)}{\eps'} \right\rceil$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
 				\begin{enumerate}
-					\item Sample a random obfuscation of $C_b$ via re-obfuscating the existing $C_b$
+					% TODO: REOBFUSCATE??
+					% Urrr we need to have 3 gratings of security parameters
+					% Okay we need to keep far more careful track of parameters throughout here
+					% Urgie turgies.... re-randomization of iO... learn about zis shsz **deeply**
+					\item Sample a random obfuscation of $C_b^{s'}$ via re-randomizing the obfuscating of the existing $C_b^{s'}$
 					\item Sample a random obfuscation of $\circMid_i$ via re-obfuscating $\circMid_i$
 					\item Have $\advers$ distinguish between $C_b$ and $\circMid$
 					\item Output 1 if successful.

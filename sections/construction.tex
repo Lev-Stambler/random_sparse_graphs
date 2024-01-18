@@ -18,7 +18,7 @@ such that given, $\phi(K, v_0)$ for root $v_0$, a PPT adversary which runs in ti
 	\label{eq:guessPhi}
 	\Pr[\advers(\mathcal{O}(\circNeigb), v_0, v, \labelFunc(K, v_0)) = \labelFunc(K, v)] \leq \epsilon
 \end{equation}
-for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$ and the circuit is padded to size $\circSize$.
+for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$ and the circuit is padded to size $\compDepth$.
 if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string.
 We fix the adversary's advantage to $\epsilon < \poly(\lambda)$ and runtime to $T(\lambda) \leq \poly(\lambda, \frac{1}{\eps})$
 as we will need to show
@@ -32,14 +32,15 @@ $
 $ for $K \randomGet \set{0, 1}^\lambda$, and we can now define our neighbor function $\circNeigb$.
 \begin{equation}
 	\label{eq:neighbfn}
-	\circNeigb(\labelFunc(K, v), v) = C_1\circ\cdots \circ C_S \circ \; \circNeigbBase(\labelFunc(K, v))
+	\circNeigb(\labelFunc(K, v), v) = C_1\circ\cdots \circ C_\compDepth \circ \; \circNeigbBase(\labelFunc(K, v))
 \end{equation}
-where $\circNeigbBase$ is defined in Algorithm \ref{alg:neighb} and $C_1, \dots C_S$ is 
-$\circPad$ as defined in Algorithm \ref{alg:pad} or a simple circuit which 
-will be defined within context.
+where $\circNeigbBase$ is defined in Algorithm \ref{alg:neighb} and $C_1, \dots C_\compDepth$ is 
+either the identity function or a simple circuit which 
+will be defined within context. In any case, $C_1, \dots C_\compDepth$ are always the same fixed and $O(1)$ size.
+We refer to $\compDepth$ as the ``composition depth'' of an $\HiO$ obfuscated circuit.
 % TODO: smwhere else?
-We will use the shorthand $\HiO(\circNeigb)$ to denote 
-$ \circPad \circ \cdots \circ \circPad \circ \; \HiO(\circNeigbBase)$.
+We will use the shorthand $\circNeigb$ to denote 
+$ C_1 \circ \cdots \circ C_\compDepth \circ \; \HiO(\circNeigbBase)$.
 
 \begin{algorithm}[H]
 	\caption{
@@ -58,18 +59,6 @@ $ \circPad \circ \cdots \circ \circPad \circ \; \HiO(\circNeigbBase)$.
 		\EndFunction
 	\end{algorithmic}
 	\label{alg:neighb}
-\end{algorithm}
-
-\begin{algorithm}[H]
-	\caption{
-		The circuit for the padding function, $\circPad$ where the circuit size is $\paramPad$.
-	}
-	\begin{algorithmic}[1]
-		\Function{$\circPad$}{$x$}
-			\State \Return $x$
-		\EndFunction
-	\end{algorithmic}
-	\label{alg:pad}
 \end{algorithm}
 
 \begin{theorem}[Label Extractibility]

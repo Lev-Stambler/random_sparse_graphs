@@ -28,7 +28,7 @@ Now, we will start with the base case. The base case is in essence non-cryptogra
 		\label{eq:cutLabel}
 		\Pr[\advers(\obfFN(\circNeigb), v_0, v, \phi(K, v_0)) \in \phi(K, C_V)] < \eps
 	\end{equation}
-	for any $\circSize \geq \poly(\lambda)$.
+	for any $\compDepth \geq \poly(\lambda)$.
 	We have
 	\begin{equation*}
 		H_0 = \Z^+ \times \set{ u \mid (w, u) \in C_E \text{ and } u \in T} \bigcup \set{ w \mid (w, u) \in C_E \text{ and } w \in T}.
@@ -128,7 +128,7 @@ which contain $v$.
 
 \begin{lemma}
 	\label{lemma:hybB}
-	Each hybrid from $\Hyb_1$ to $\Hyb_{2, 1}$ and $\Hyb_{2, j - 1}$ to $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
+	Each hybrid from $\Hyb_1$ to $\Hyb_{2, 1}$ and $\Hyb_{2, j - 1}$ to $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(h^*)$
 	is distinguishable with advantage at most $\epsilon / (10d)$. Thus, $\Hyb_1$ and $\Hyb_{2, \deg^{-1}(w^*)}$ are distinguishable with advantage at most $\epsilon / 10$.
 	\begin{proof}
 		This proof will be a modification of the proof in \cite{ishai2015public} for the simple case of weak extractible obfuscation.
@@ -150,7 +150,7 @@ which contain $v$.
 		for instances of $C_0^s$.
 
 		First, given $C_0^s$, $\advers$ can construct a larger version of $C_1^{s + 1}$ by 
-		composing $C_0^s$ with a program that returns $\bot$ for the $j$-th input of $h^0$ on line \ref{alg:lineret}.
+		composing $C_0^s$ with a program that returns $\bot$ for the $j$-th input of $h^*$ on line \ref{alg:lineret}.
 		$\advers$ can also produces $C_0^{s + 1}$ from $C_0^s$ via composing $C_0^s$ with the identity circuit.
 
 		% Moreover, $\advers$ can construct a larger version of $C_0$, which we will call $C_0'$, by simply padding it out to the size of $C_1'$.
@@ -181,7 +181,7 @@ which contain $v$.
 					\item Output 1 if successful.
 				\end{enumerate}
 			Note that we can estimate $\epsilon'_b$ as the number of successful runs, which we will denote $\sum_{j \in [I]} \success_{i, j}$, divided by $I$.
-			\item If $\epsilon'_1 > \epsilon'_0$, then $\circMid = C_0$, otherwise, $\circMid = C_1$.
+			\item If $\epsilon'_1 > \epsilon'_0$, then $\circMid(x) = C_0^{s+2}(x)$, otherwise, $\circMid = C_1^{s+2}(x)$.
 		\end{enumerate}
 
 		Note that $\adversB$ runs in time $O(T' I)$. So, if we set the upper-bound on the runtime of the adversary in \cref{eq:guessPhi}

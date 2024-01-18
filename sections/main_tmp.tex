@@ -18,7 +18,7 @@ such that given, $\phi(K, v_0)$ for root $v_0$, a PPT adversary which runs in ti
 	\label{eq:guessPhi}
 	\Pr[\advers(\mathcal{O}(\circNeigb), v_0, v, \labelFunc(K, v_0)) = \labelFunc(K, v)] \leq \epsilon
 \end{equation}
-for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$ and the circuit is padded to size $\circSize$.
+for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$ and the circuit is padded to size $\compDepth$.
 if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string.
 We fix the adversary's advantage to $\epsilon < \poly(\lambda)$ and runtime to $T(\lambda) \leq \poly(\lambda, \frac{1}{\eps})$
 as we will need to show
@@ -37,7 +37,7 @@ $
 $ for $K \randomGet \set{0, 1}^\lambda$, and we can now define $\circNeigb$:
 \begin{algorithm}[H]
 	\caption{
-		The circuit for the neighbor function, $\circNeigb$ padded out to size $\circSize$.
+		The circuit for the neighbor function, $\circNeigb$ padded out to size $\compDepth$.
 	}
 	\begin{algorithmic}[1]
 		\Function{$\circNeigb$}{$X, v$}
@@ -55,7 +55,7 @@ $ for $K \randomGet \set{0, 1}^\lambda$, and we can now define $\circNeigb$:
 \end{algorithm}
 
 % TODO: more concrete somewhere with overhead
-We are going to show that \cref{eq:guessPhi} for $\circSize = O(D \cdot \iOOverHead)$ where $\iOOverHead$ is the additive overhead of indistinguishable obfuscation.
+We are going to show that \cref{eq:guessPhi} for $\compDepth = O(D \cdot \iOOverHead)$ where $\iOOverHead$ is the additive overhead of indistinguishable obfuscation.
 We will do this by first showing that the non-existence of an extractor to find a path from $v_0$ to $v$ implies that $\advers$
 necessarily does not know $\phi(K, c)$ for a $c \in C_V \subset V$ where the vertices in $C_V$ border 
 a graph cut which separates $v_0$ and $v$. Note that the base case holds for all $S \geq \poly(\lambda)$. 
@@ -75,7 +75,7 @@ At each inductive step, we restrict the security game to hold for $S \geq O(\ind
 		\label{eq:cutLabel}
 		\Pr[\advers(\obfFN(\circNeigb), v_0, v, \phi(K, v_0)) \in \phi(K, C_V)] < \eps
 	\end{equation}
-		for any $\circSize \geq \poly(\lambda)$.
+		for any $\compDepth \geq \poly(\lambda)$.
 		We define $C_V \subset V$ to be
 	\begin{equation*}
 		% TODO: there is a graph theoretic name for this.
@@ -121,7 +121,7 @@ which contain $v$.
 	we then have
 	% TODO: fix O at constant poly
 	% TODO: define q
-	for any $w \in \Gamma(h)$ and $\circSize \geq \paramPad(\inductiveInd, \lambda)$ for all $h \in H$, 
+	for any $w \in \Gamma(h)$ and $\compDepth \geq \paramPad(\inductiveInd, \lambda)$ for all $h \in H$, 
 	\begin{equation*}
 		% TODO: change all to just <
 		% TODO: maybe we nee to fix \eps

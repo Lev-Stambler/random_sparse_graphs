@@ -1,0 +1,88 @@
+\section{DAG Label Obfuscation from Additive Overhead iO}
+\subsection{DAG Randomized Traversal}
+Say that we have a sparse, potentially exponentially sized, graph $\graph = (\verts, \edges)$ with polynomial depth $D$,
+and forall $v \in \verts, \deg(v) \leq d$. Moreover, for simplicity,
+assume that for all $v$, 
+$$
+\deg^{-1}(v) = \big|\set{u \in V \mid \exists j \in [d], \Gamma(u)_j = v}\big| \leq d.
+$$
+In words, there are at most $d$ edges into a vertex. As a note, our construction just requires
+that $\deg^{-1}(\cdot) = O(1)$ but for the sake of simplicity we fix $\deg^{-1}(\cdot) \leq d$.
+
+We also require that $\graph$ is equipped with a neighbor function, $\Gamma$, which can be computed in polynomial time.
+% (TODO: padding).
+We define a randomized and keyed labelling function $\phi: \binSet^\lambda \times \verts \rightarrow \binSet^{\poly(\lambda)}$ 
+such that given, $\phi(K, v_0)$ for root $v_0$, a PPT adversary which runs in time at most $T(\lambda)$, $\advers$, which does not know a path from $v_0$ to $v$,
+% TODO: defn extractor??
+\begin{equation}
+	\label{eq:guessPhi}
+	\Pr[\advers(\mathcal{O}(\circNeigb), v_0, v, \labelFunc(K, v_0)) = \labelFunc(K, v)] \leq \epsilon
+\end{equation}
+for function $\circNeigb$ where $\circNeigb(\labelFunc(K, u)) = \labelFunc(K, \Gamma(u)_1), \dots, \labelFunc(K, \Gamma(u)_d)$ and the circuit is padded to size $\circSize$.
+if $\Gamma(u) \neq \emptyset$ and otherwise $\Gamma(u)$ returns a $\bot$ string.
+We fix the adversary's advantage to $\epsilon < \poly(\lambda)$ and runtime to $T(\lambda) \leq \poly(\lambda, \frac{1}{\eps})$
+as we will need to show
+that a set of a potentially exponential number of games \emph{does not have exponential security loss}
+nor or \emph{reduce down to security against an exponentially strong adversary}.
+
+\subsection{Instantiation}
+We define 
+$
+	\labelFunc(K, v) = F(K, v)
+$ for $K \randomGet \set{0, 1}^\lambda$, and we can now define our neighbor function $\circNeigb$.
+\begin{equation}
+	\label{eq:neighbfn}
+	\circNeigb(\labelFunc(K, v), v) = \underbrace{\circPad \circ\cdots \circ \circPad}_{S\text{ times}} \circ \; \circNeigbBase(\labelFunc(K, v))
+\end{equation}
+where $\circNeigbBase$ is defined in Algorithm \ref{alg:neighb} and $\circPad$ is defined in Algorithm \ref{alg:pad}.
+% TODO: smwhere else?
+We will use the shorthand $\HiO(\circNeigb)$ to denote 
+$ \circPad \circ \cdots \circ \circPad \circ \; \HiO(\circNeigbBase)$.
+
+\begin{algorithm}[H]
+	\caption{
+		The circuit for the neighbor function, $\circNeigbBase$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\circNeigbBase$}{$X, v$}
+			\If{$f(X) \neq f(F(K, v))$}
+				\State \Return $\bot$
+			\EndIf
+		 	\If{$\Gamma(v) = \emptyset$}
+				\State \Return $\bot$
+			\EndIf
+			\State $u_1, \dots u_d = \Gamma(v)$
+			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighb}
+\end{algorithm}
+
+\begin{algorithm}[H]
+	\caption{
+		The circuit for the padding function, $\circPad$ where the circuit size is $\paramPad$.
+	}
+	\begin{algorithmic}[1]
+		\Function{$\circPad$}{$x$}
+			\State \Return $x$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:pad}
+\end{algorithm}
+
+\begin{theorem}[Label Extractibility]
+	\label{thm:labelExtract}
+	Given an $\HiO$ scheme, then
+	for all $v \in \verts$, and uniform fixed polynomial sized extractor $\extractor$ circuit, we have that if there
+	exists a PPT adversary $\advers$ such that
+	\begin{equation}
+		\Pr[\advers(\HiO(\circNeigb), v_0, v, \labelFunc(K, v_0)) = \labelFunc(K, v)] > \epsilon		
+	\end{equation}	
+	then
+	\begin{equation}
+		\Pr[\extractor(\advers, \HiO(\circNeigb), v_0, v, \labelFunc(K, v_0)) = P] > \negl(\lambda)
+	\end{equation}
+	where $\epsilon$ is a fixed advantage such that $\epsilon < \poly(1 / \lambda)$,
+	$P$ is a path from $v_0$ to $v$ in $\graph$, 
+	and $S = O(\depth \cdot d)$.
+\end{theorem}

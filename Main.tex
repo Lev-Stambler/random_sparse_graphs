@@ -18,12 +18,14 @@
 \newcommand{\circSize}{S}
 \newcommand{\circNeigbBase}{C_\Gamma}
 % \newcommand{\circNeigb}{{{\circNeigbBase}^{\circSize}}}
+\newcommand{\circPad}{{C_P}}
 \newcommand{\circNeigb}{{C_\Gamma^\circSize}}
-\newcommand{\depth}{\text{dep}}
+\newcommand{\depth}{\texttt{dep}}
 \newcommand{\PRF}{\texttt{PRF}}
 \newcommand{\PRG}{\texttt{PRG}}
 \newcommand{\Hyb}{\texttt{Hyb}}
 \newcommand{\adversB}{\mathcal{B}}
+\newcommand{\extractor}{E}
 \newcommand{\iO}{i\mathcal{O}}
 \newcommand{\HiO}{\text{H}i\mathcal{O}}
 \newcommand{\Obfuscate}{\text{Obfuscate}}
@@ -34,7 +36,7 @@
 \newcommand{\graphDepth}{D}
 \newcommand{\iOOverHead}{\mathcal{O}}
 \newcommand{\inductiveInd}{\mathcal{I}}
-\newcommand{\paramScaleOverhead}{q}
+\newcommand{\paramPad}{q}
 %%%%%%%%%%%% End Commands %%%%%%%%%%%%
 \newcommand{\LS}[1]{{\textcolor{red}{#1}}}
 
@@ -63,7 +65,9 @@
 % \maketitle
 \include{sections/prelims}
 % \include{sections/indising_graph}
-\include{sections/main_tmp}
+% \include{sections/main_tmp}
+\include{sections/construction}
+\include{sections/proof}
 % \include{sections/sketch}
 % \include{sections/sketch2}
 % \include{sections/rom_general}

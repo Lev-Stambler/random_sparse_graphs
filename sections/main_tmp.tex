@@ -28,7 +28,7 @@ nor or \emph{reduce down to security against an exponentially strong adversary}.
 \subsection{Using Constant Overhead iO}
 \label{def:constOverheadParam}
 
-We let $\paramScaleOverhead$ blah blah blah
+We let $\paramPad$ blah blah blah
 
 \subsection{Instantiation}
 We define 
@@ -121,7 +121,7 @@ which contain $v$.
 	we then have
 	% TODO: fix O at constant poly
 	% TODO: define q
-	for any $w \in \Gamma(h)$ and $\circSize \geq \paramScaleOverhead(\inductiveInd, \lambda)$ for all $h \in H$, 
+	for any $w \in \Gamma(h)$ and $\circSize \geq \paramPad(\inductiveInd, \lambda)$ for all $h \in H$, 
 	\begin{equation*}
 		% TODO: change all to just <
 		% TODO: maybe we nee to fix \eps
@@ -193,17 +193,17 @@ which contain $v$.
 			then we can build an adversary, $\adversB$, which can produce a label $\phi(K, h)$ for $h \in H$ in $\Hyb_0/ \Hyb_1$.
 		\end{enumerate}
 
-		For simplicity, say that the input size to all of our circuits is $n$. Let $s \in \Z$ such that $s \geq \paramScaleOverhead(\inductiveInd, \lambda)$.
+		For simplicity, say that the input size to all of our circuits is $n$. Let $s \in \Z$ such that $s \geq \paramPad(\inductiveInd, \lambda)$.
 		Also, let $C_0^s$ be the circuit from the first hybrid and $C_1^s$ the one from the second.
 
 		At a high level, we will show that an adversary can create a ``padded out'' $C_1$ given only $C_0$. Then, 
-		if an adversary can distinguish between $C_0^{s'}$ and $C_1^{s'}$ for $s' \geq \paramScaleOverhead(\inductiveInd + 1, \lambda)$, we can break the inductive hypothesis.
+		if an adversary can distinguish between $C_0^{s'}$ and $C_1^{s'}$ for $s' \geq \paramPad(\inductiveInd + 1, \lambda)$, we can break the inductive hypothesis.
 
 		First, given $C_0^s$, $\advers$ can construct a larger version of $C_1^{s'}$ by obfuscating a program which calls $C_0^s$ internally and returns $\bot$ for the $j$-th input of $w$.
 		$\advers$ also then produces $C_0^s$ which is $C^0$ padded out to the size of $C_1^{s'}$.
 		% TODO: not v precise
 		% TODO: add label
-		Note that we define $\paramScaleOverhead(\inductiveInd + 1, \lambda) - \paramScaleOverhead(\inductiveInd, \lambda)$ in \cref{def:constOverheadParam} to be
+		Note that we define $\paramPad(\inductiveInd + 1, \lambda) - \paramPad(\inductiveInd, \lambda)$ in \cref{def:constOverheadParam} to be
 		at least as large as the difference between $C_0^s$ and $C_1^{s'}$.
 		% \linebreak
 
@@ -219,7 +219,7 @@ which contain $v$.
 		So, if we build an adversary $\adversB$ to tell if $\circMid_i = C_0^{s'}$ or $\circMid_i = C_1^{s'}$ with probability $\gamma$,
 		we have that $\adversB(C_0^{s'}, C_1^{s'})$ can be used to check if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
 		So then, $\adversB$ can be used to learn $\phi(K, \alpha)$ with probability at least $\gamma^n$.
-		We then have that because $\alpha \in H$ and the initial circuit has size $s \geq \paramScaleOverhead(\inductiveInd, \lambda)$, $\adversB$ can break the inductive hypothesis!\\
+		We then have that because $\alpha \in H$ and the initial circuit has size $s \geq \paramPad(\inductiveInd, \lambda)$, $\adversB$ can break the inductive hypothesis!\\
 		\linebreak
 		% 
 		% Now, if $\adversB$ can distinguish $C_0^{s'}, C_1^{s'}$, we can create and adversary $\adversD$

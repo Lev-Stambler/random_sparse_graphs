@@ -1,2 +1,218 @@
+\subsection{Proof of \cref{thm:labelExtract}}
+Intuitively, showing how to construct an extractor given an adversary with advantage seems to be an
+intractable problem. Rather than approach the proof in this way, we will show the contrapositive.
+I.e.\ we will assume that there does not exist a uniform extractor for a fixed $\advers$ and graph instance and then show that
+such an adversary has negligible advantage. We will do this by making an inductive argument on the graph and parameter $S$, finally giving us \cref{thm:labelExtract} for $S \geq O(\depth \cdot d)$.\\
 
-\subsection{Proof of Theorem \ref{eq:guessPhi}}
+
+We will first define some useful notation. Let $H_\inductiveInd \subset \Z^+ \times V$ be a ``hard'' set of 
+composition depth and vertices for the $\inductiveInd$-th step of induction such that $\advers$ cannot, with non-negligible probability, produce
+$\phi(K, h)$ where $(s, h) \in H_\inductiveInd$. More formally, for any fixed uniform $\adversV$,
+\begin{equation*}
+	\Pr\left[\adversV\left(\advers, \HiO(\circNeigbBase^s), v_0, h, \labelFunc(K, v_0)\right) = \phi(K, h)\right] \leq \negl(\lambda).
+\end{equation*}
+Further, let $\pathSet$ be the set of all paths from $v_0$ to $v$ in $\graph$.
+
+% TODO: make base case proof more clear and intuitive
+% Maybe add a picture
+% Explain how we are just using this cut thing existentially
+\subsubsection*{Inductive Proof}
+Now, we will start with the base case. The base case is in essence non-cryptographic and holds for any $S \in \Z$.
+\begin{lemma}[Base Case Game]
+	\label{lemma:cutBaseCase}
+	Assuming that there is no extractor $E$ such that 
+	$$\Pr[E(\advers,\HiO(\circNeigb), v_0, v) = P] \geq \frac{1}{p(\lambda)}$$
+	where $P \in \pathSet$, then for any PPT $\advers$, there exists some graph cut
+	$C_E \subset E$ which separates $v_0$ and $v$ and a set $C_V$ such that
+	\begin{equation}
+		\label{eq:cutLabel}
+		\Pr[\advers(\obfFN(\circNeigb), v_0, v, \phi(K, v_0)) \in \phi(K, C_V)] < \eps
+	\end{equation}
+	for any $\circSize \geq \poly(\lambda)$.
+	We have
+	\begin{equation*}
+		H_0 = \Z^+ \times \set{ u \mid (w, u) \in C_E \text{ and } u \in T} \bigcup \set{ w \mid (w, u) \in C_E \text{ and } w \in T}.
+	\end{equation*}
+	where $V = S \bigcup T$ is a partition of $V$ such that $v_0 \in S$ and $v \in T$.
+	In words, for any composition depth, $H_0$ are the vertices just adjacent to the cut and on the same side as $v$.
+	\begin{proof}
+		We will show that if $\advers$ can break \cref{eq:cutLabel}, then we can construct an extractor,
+		$E$, which finds a path from $v_0$ to $v$ with non-negligible probability.
+
+		Assume that for every possible cut, $\advers$ is able to produce a single label in this cut for a vertex $w$.
+		Then, we note that there must be at least 1 path from $v_0$ to $w$ and from $w$ to $v$ as otherwise, $w$ would not be in the cut.
+		Moreover, we note that $\advers$ must be able to produce a label for all vertices on at least one path
+		from $v_0$ to $w$ as otherwise, we can change the cut to include the edges between where
+		$\advers$ is able to produce a label and not able to produce a label. Using the same argument,
+		we can show that $\advers$ must be able to produce all labels on a path from $w$ to $v$.
+
+		Note that $\advers$ is not given the specific cut $C_E$ but rather $C_E$ is chosen based off of the adversary.
+		So, we can build an extractor to do the following:
+		\begin{enumerate}
+			\item Create an iO obfuscated circuit with a random key, $K'$, for $\circNeigb$ and create circuit $\obfFN(\circNeigb)$
+			      as well as $\phi(K', v_0)$
+			\item Run $\advers(\obfFN(\circNeigb), v_0, v, \phi(K', v_0))$ to get all labels $\phi(K', v_0), \dots \phi(K', v)$
+			      for some path from $v_0$ to $v$.
+			\item Recreate the path from $v_0$ to $v$ via checking which vertex matches to adjacent labels in the path:
+			      % TODO: this assumes no cycles!!!
+			      I.e.\ starting with $\ell = 0$, we can learn the $\ell + 1$ vertex via finding $j \in [d]$ such that
+			      $\circNeigb(\phi(K', v_\ell), v_\ell)_j \in \set{\phi(K', v_0), \dots, \phi(K', v)}$
+			      and then setting $v_{\ell + 1} = \Gamma(v_\ell)_j$.
+		\end{enumerate}
+	\end{proof}
+\end{lemma}
+
+We can look at \cref{lemma:cutBaseCase} as a ``base case'' of sorts. We now inductively build up a series of games
+such that $\advers$ cannot find any label in $V_1$ where $V_1$ are the vertices on side of the cut (as defined in \cref{lemma:cutBaseCase})
+which contain $v$.
+
+
+\begin{lemma}[Inductive Game Hypothesis]
+	Assuming adaptive security of constrained PRFs, one way functions, the existence of homomorphic indistinguishable obfuscation,
+	and the hardness of producing a label for $h \in H_\inductiveInd$,
+	then we have that
+	$$H_{\inductiveInd + 1} = \left\{ H_\inductiveInd \cup \set{(s, \Gamma(v)) \mid (s, v) \in H_\inductiveInd} \right\} \bigcap \set{ [2 (\inductiveInd + 1) \cdot d, \infty) \times V}.$$
+
+	\begin{proof}
+		We are going to use a series of indistinguishable hybrids along with the circuit defined in \ref{alg:neighbHyb1} to show the above
+		\begin{itemize}
+			\item $\Hyb_0$: In the first hybrid, the following game is played
+				\begin{enumerate}
+					\item $K \gets \binSet^{\lambda'}$ and $\phi(K, v_0) = (F(K, v_0), v_0)$ where $K$ is some fixed secret drawn from a uniform distribution
+					\item The challenger generates $\HiO(\circNeigb)$ and gives the program to $\advers$
+					\item The challenger gives the adversary $h^*$ in plaintext.
+					\item $\advers$ outputs guess $g$ and wins if $g = \phi(K, h^*)$ %hmmm... do we give w?
+				\end{enumerate}
+			
+			\item $\Hyb_1$: We replace $\circNeigb$ with the punctured circuit defined in \cref{alg:neighbHyb1}.
+			Fix the constant $z^* = f(F(K, w^*))$
+			% and $y^*_1 = f(F(K, \Gamma(w^*)_1)), \dots, y^*_d = f(F(K, \Gamma(w^*)_d))$.
+			\item $\Hyb_{2, 1}$
+			We replace circuit~\ref{alg:neighbHyb1} with circuit~\ref{alg:neighbHyb2} where we 
+			set $Y^* = (1, y)$ such that $\Gamma(y)_1 = h^*$. So then, we have that
+			have $F(K, \Gamma(y)_1) = \bot$. Moreover, we set the punctured set, $S$ to $\emptyset$ (i.e.\ we do not puncture the PRF).
+			\item $\Hyb_{2, j}$ for $j \in \set{2, \dots, \deg^{-1}(h^*)}$
+			We replace $Y^*$ with $Y^* \cup (j, y)$ such that $\Gamma(y)_j = h^*$.
+			Note after the last of these hybrids, we have that $F(K, h^*)$ is always set to $\bot$ on line \ref{alg:lineret} of circuit~\ref{alg:neighbHyb2}.
+			\item $\Hyb_3$: We puncture the PRF at $h^*$ and set $S = \set{h^*}$.
+			\item $\Hyb_4$: Set $z^* = f(t)$ where $t$ is chosen at random %TODO: specify field size
+		\end{itemize}
+		Finally, we can note that if $\Hyb_0 \compInd \Hyb_4$, then
+		\begin{equation*}
+			\Pr[\advers(\circNeigb, v_0, h^*, \phi(K, v_0)) = \phi(K, h^*)] 
+			\compInd
+			\Pr[\advers(\circNeigb^*, v_0, h^*, \phi(K, v_0)) = \phi(K, h^*)]
+		\end{equation*}
+		where $\circNeigb^*$ is the circuit which sets $z^*$ to be the image on a one way function of a randomly chosen point.
+		As we will show in \cref{lemma:hybA}, \cref{lemma:hybB}, and \cref{lemma:hybC},
+		an adversaries advantage between games in $\Hyb_0$ and $\Hyb_3$ is at most $\epsilon / 2$.
+		Thus, if $\advers$ can produce $\phi(K, v) = (\sigma_v, v)$ with advantage $\epsilon / 2$
+		in $\Hyb_3$, then $\advers$
+		can find a pre-image for $z^*$ under $f$ with non-negligible probability and thus break the security of a one way function.
+		We then have that the advantage of the adversary in $\Hyb_0$ cannot be more than $\epsilon$.
+	\end{proof}
+\end{lemma}
+
+
+\begin{lemma}
+	\label{lemma:hybA}
+	% TODO: workout
+	$\Hyb_0$ and $\Hyb_1$ are distinguishable with advantage at most $\epsilon / 10$.
+	\begin{proof}
+		Assume towards contradiction that $\eps \in \poly(1/\lambda)$.
+		Note that for all inputs $(z, v)$ to $\circNeigb$ as defined in circuit~\ref{alg:neighb} and circuit~\ref{alg:neighbHyb1}
+		are equivalent and thus indistinguishable by the definition of indistinguishable obfuscation.
+		So, if $\eps \in \poly(\lambda)$, then an adversary cannot distinguish the hybrids with probability more than $\epsilon / 10$.
+	\end{proof}
+\end{lemma}
+
+\begin{lemma}
+	\label{lemma:hybB}
+	Each hybrid from $\Hyb_1$ to $\Hyb_{2, 1}$ and $\Hyb_{2, j - 1}$ to $\Hyb_{2, j}$ for $j \in 2, \dots, \deg^{-1}(w^*)$
+	is distinguishable with advantage at most $\epsilon / (10d)$. Thus, $\Hyb_1$ and $\Hyb_{2, \deg^{-1}(w^*)}$ are distinguishable with advantage at most $\epsilon / 10$.
+	\begin{proof}
+		This proof will be a modification of the proof in \cite{ishai2015public} for the simple case of weak extractible obfuscation.
+		The key idea lies on two observations:
+		\begin{enumerate}[labelsep=0.1em]
+			% TODO: explitly define these circuits in the construction so we can explicity define circ pad's size
+			\item We can go from $\Hyb_{2, j - 1}$ (or $\Hyb_1$) to a ``padded out'' version of $\Hyb_{2, j}$ by 
+			composing $\circNeigb$ with a circuit which returns $\bot$ for the $j$-th input.
+			\item We can go from $\Hyb_{2, j - 1}$ (or $\Hyb_1$) to a re-randomized, slightly larger, version of itself by composing $\HiO(\circNeigb)$ with $C_{iden}$ (the identity circuit).
+			\item If an adversary can produce $\Hyb_{2, j}$ solely from $\Hyb_{2, j - 1}$ (or $\Hyb_1$) and can distinguish them with advantage at least $\epsilon / 10d$,
+			then we can build an adversary, $\adversB$, which can produce a label $\phi(K, h)$ for $h \in H$ in $\Hyb_0/ \Hyb_1$.
+		\end{enumerate}
+
+		For simplicity, say that the input size to all of our circuits is $n$. Let $s \in \Z$ such that $s \geq 2 \cdot d \cdot \inductiveInd$.
+		Also, let $C_0^s$ be the circuit from the first hybrid and $C_1^s$ the one from the second.
+
+		At a high level, we will show that an adversary can create a \emph{larger version} of $C_1$ given only $C_0$. Then, 
+		if an adversary can distinguish between $C_0^{s + 2}$ and $C_1^{s + 2}$, the adversary can recover a label in $H_\inductiveInd$
+		for instances of $C_0^s$.
+
+		First, given $C_0^s$, $\advers$ can construct a larger version of $C_1^{s + 1}$ by 
+		composing $C_0^s$ with a program that returns $\bot$ for the $j$-th input of $h^0$ on line \ref{alg:lineret}.
+		$\advers$ can also produces $C_0^{s + 1}$ from $C_0^s$ via composing $C_0^s$ with the identity circuit.
+
+		% Moreover, $\advers$ can construct a larger version of $C_0$, which we will call $C_0'$, by simply padding it out to the size of $C_1'$.
+		% Now, if there exists a distinguishing adversary for this larger game with circuit size $\lambda'$, we can break the inductive hypothesis of the scheme with circuit size $\lambda$.
+		Now, assume towards contradiction that there exists an adversary $\advers$ that can distinguish $C_0^{s + 2}$ and $C_1^{s + 2}$ with advantage $\epsilon' > \epsilon / 10d$
+		in $O(T')$ time.
+		Let $\circMid_i$ be a circuit such that $\circMid_i(X) = C_0^{s + 2}(X)$ if $X_i = 0$ and $\circMid_i(X) = C_1^{s + 2}(X)$ if $X_i = 1$.\\
+		% TODO: composition indisting?
+		We can see that $C_0^{s + 1}$ and $C_1^{s + 1}$ differ on at most 1 input which we will call $\alpha$. %(which is the appended vertex $y$ to $Y^*$);
+		% call this input $\alpha$.
+		Then, $\circMid_i = C_0^{s + 2}$ if $\alpha_i = 0$ and $\circMid_i = C_1^{s + 2}$ if $\alpha_i = 1$.
+		So, if we build an adversary $\adversB$ which can tell if $\circMid_i = C_0^{s + 2}$ or $\circMid_i = C_1^{s + 2}$ with probability $\gamma$,
+		we have that $\adversB(C_0^{s + 2}, C_1^{s + 2})$ can be used to check if $\alpha_i$ is $0$ or $1$ with probability $\gamma$.
+		So then, $\adversB$ can be used to learn $\phi(K, \alpha)$ with probability at least $\gamma^n$.
+		Because $(s, \alpha) \in H$, we get that $\adversB$ can break the inductive hypothesis!\\
+		% TODO: H should m\paramPad(\inductiveInd, \lambda)aybe be a s \cross v
+		\linebreak
+		% 
+		To build $\adversB$ to tell if $\circMid_i = C_0$ or $C_1$ with probability $\gamma^n \geq \epsilon$, we will make oracle calls to $\advers$:
+		\begin{enumerate}
+			\item Run $I =\left\lceil 
+			\frac{12\left(\ln 2 + \ln n - \ln\left(1 - \eps\right) + \ln 2\right)}{\eps'} \right\rceil$ iterations of the following experiment to estimate advantage $\epsilon'_b$ for $b \in \set{0, 1}$
+				\begin{enumerate}
+					\item Sample an obfuscation of $C_b^{s + 2}$ by composing $C_b^{s + 1}$ with the identity circuit.
+					% TODO: define this switching function a bit better. But it simply decides between saying \bot or not
+					\item Sample an obfuscation of $\circMid_i$ by composing a function which will return $\bot$ on line~\ref{alg:lineret} if $\alpha_i = 0$ and otherwise return the output of $C_0^{s + 1}$.
+					\item Have $\advers$ distinguish between $C_b^{s + 2}$ and $\circMid_i$
+					\item Output 1 if successful.
+				\end{enumerate}
+			Note that we can estimate $\epsilon'_b$ as the number of successful runs, which we will denote $\sum_{j \in [I]} \success_{i, j}$, divided by $I$.
+			\item If $\epsilon'_1 > \epsilon'_0$, then $\circMid = C_0$, otherwise, $\circMid = C_1$.
+		\end{enumerate}
+
+		Note that $\adversB$ runs in time $O(T' I)$. So, if we set the upper-bound on the runtime of the adversary in \cref{eq:guessPhi}
+		to $O(T' I))$, then $\adversB$ can learn $\phi(K, y)$ with probability $\gamma^n \geq \frac{\epsilon}{10d}$.
+
+		We differ the proof that $I$ is the correct choice of parameter to \cref{appendix:paramHybB}.
+	\end{proof}
+	
+\end{lemma}
+
+\begin{lemma}
+	The game in $\Hyb_{2, \deg^{-1}(w^*)}$ is indistinguishable from $\Hyb_3$ with probability
+	at most $\eps/10$.
+	\begin{proof}
+		As with \cref{lemma:hybA}, 
+		the indistinguishably follows directly from the definition of indistinguishable obfuscation.
+	\end{proof}
+\end{lemma}
+
+\begin{lemma}
+	\label{lemma:hybC}
+	% TODO: assuming this then that
+	The game in $\Hyb_{3}$ is indistinguishable from $\Hyb_4$.
+	\begin{proof}
+		Assume towards contradiction that $\eps \in \poly(1/\lambda)$.
+		We now show that if the advantage of $\advers$ is greater than $\eps/10$, then we can
+		create a reduction, $\adversB$, which can break the security of the PRF at the punctured point.
+		$\adversB$ first chooses a message $w^*$ and submits this to the constrained PRF challenger and gets back the punctured PRF key
+		$K(\set{w^*})$ and challenge $a$. $\adversB$ then runs the experiment in $\Hyb_{2, \deg^{-1}(w^*)}$
+		except that $z^* = f(a)$. If $a$ is the output of the PRF, then we are in $\Hyb_{2, \deg^{-1}(w^*)}$,
+		if $a$ is the output of a random function, then we are in $\Hyb_3$.
+	\end{proof}
+\end{lemma}
+

@@ -25,12 +25,15 @@
 \newcommand{\PRG}{\texttt{PRG}}
 \newcommand{\Hyb}{\texttt{Hyb}}
 \newcommand{\adversB}{\mathcal{B}}
+\newcommand{\adversV}{\mathcal{V}}
 \newcommand{\extractor}{E}
 \newcommand{\iO}{i\mathcal{O}}
 \newcommand{\HiO}{\text{H}i\mathcal{O}}
 \newcommand{\Obfuscate}{\text{Obfuscate}}
 \newcommand{\Eval}{\text{Eval}}
 \newcommand{\Compose}{\text{Compose}}
+
+\newcommand{\success}{\text{succ}}
 
 \newcommand{\minEntropy}{I_\texttt{min}}
 \newcommand{\graphDepth}{D}
@@ -62,25 +65,19 @@
 \begin{document}
 
 \title{Sparse Graph Label Randomization}
+\begin{abstract}
+\end{abstract}
+\date{\today}
 % \maketitle
 \include{sections/prelims}
 % \include{sections/indising_graph}
 % \include{sections/main_tmp}
-\include{sections/construction}
-\include{sections/proof}
-% \include{sections/sketch}
-% \include{sections/sketch2}
-% \include{sections/rom_general}
-% \include{sections/non_consistent_labeling}
-% \include{sections/io_and_fe}
-% \include{sections/exp_loss}
+\input{sections/construction}
+\input{sections/proof}
+\input{sections/proof_circ_aux} \pagebreak
 
 % \author{\myname}
 
-\date{\today}
-
-\begin{abstract}
-\end{abstract}
 
 \bibliographystyle{alpha}
 \bibliography{bib/ref}

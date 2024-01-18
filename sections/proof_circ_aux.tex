@@ -1,0 +1,58 @@
+
+\begin{algorithm}[H]
+	\caption{
+		Circuit for the neighbor function, $\circNeigb$ with PRF key
+		$K$ and constant $w^*, z^*$%, y^*_1, y^*_2, \dots, y^*_d$
+	}
+	\begin{algorithmic}[1]
+		\Function{$\circNeigb$}{$X, v$}
+			\If{$v \neq w$ and $f(X) \neq f(F(K, v))$}
+				\State \Return $\bot$
+			\EndIf
+			\If{$v = w$ and $f(X) \neq z^*$}
+				\State \Return $\bot$ 
+			\EndIf
+		 	\If{$\Gamma(v) = \emptyset$}
+				\State \Return $\bot$
+			\EndIf
+			
+			% \If{$v = w$}
+			% 	\State \Return $z^*_1, z^*_2, \dots, z^*_d$
+			% \EndIf
+			\State $u_1, \dots u_d = \Gamma(v)$
+			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighbHyb1}
+\end{algorithm}
+% TODO: change w to w^*
+
+
+\begin{algorithm}[H]
+	\caption{
+		Circuit for the neighbor function, $\circNeigb$ with punctured PRF key
+		$K(S)$ and constant $w^*, Y^*, J^*, z^*$%, y^*_1, y^*_2, \dots, y^*_d$
+	}
+	\begin{algorithmic}[1]
+		\Function{$\circNeigb$}{$X, v$}
+			\If{$v \neq w$ and $f(X) \neq f(F(K, v))$}
+				\State \Return $\bot$
+			\EndIf
+			\If{$v = w$ and $f(X) \neq z^*$}
+				\State \Return $\bot$ 
+			\EndIf
+		 	\If{$\Gamma(v) = \emptyset$}
+				\State \Return $\bot$
+			\EndIf
+			% \If{$v = w$}
+			% 	\State \Return $z^*_1, z^*_2, \dots, z^*_d$
+			% \EndIf
+			\State $u_1, \dots u_d = \Gamma(v)$
+			\While{$\exists j^* \in [d], (j^*, u_j) \in Y^*$}
+			 	\State Set $F(K, u_{j^*}) = \bot$ \label{alg:lineret}
+			\EndWhile
+			\State \Return $F(K, u_1), F(K, u_2), \dots, F(K, u_d)$
+		\EndFunction
+	\end{algorithmic}
+	\label{alg:neighbHyb2}
+\end{algorithm}

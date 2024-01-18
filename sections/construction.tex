@@ -32,9 +32,11 @@ $
 $ for $K \randomGet \set{0, 1}^\lambda$, and we can now define our neighbor function $\circNeigb$.
 \begin{equation}
 	\label{eq:neighbfn}
-	\circNeigb(\labelFunc(K, v), v) = \underbrace{\circPad \circ\cdots \circ \circPad}_{S\text{ times}} \circ \; \circNeigbBase(\labelFunc(K, v))
+	\circNeigb(\labelFunc(K, v), v) = C_1\circ\cdots \circ C_S \circ \; \circNeigbBase(\labelFunc(K, v))
 \end{equation}
-where $\circNeigbBase$ is defined in Algorithm \ref{alg:neighb} and $\circPad$ is defined in Algorithm \ref{alg:pad}.
+where $\circNeigbBase$ is defined in Algorithm \ref{alg:neighb} and $C_1, \dots C_S$ is 
+$\circPad$ as defined in Algorithm \ref{alg:pad} or a simple circuit which 
+will be defined within context.
 % TODO: smwhere else?
 We will use the shorthand $\HiO(\circNeigb)$ to denote 
 $ \circPad \circ \cdots \circ \circPad \circ \; \HiO(\circNeigbBase)$.
